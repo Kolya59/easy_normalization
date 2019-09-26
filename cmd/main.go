@@ -57,7 +57,7 @@ func main() {
 	defer func() {
 		err = postgresdriver.CloseConnection()
 		if err != nil {
-			log.Error().Msgf("Could not close db connection: %v", err)
+			log.Fatal().Msgf("Could not close db connection: %v", err)
 		}
 	}()
 
@@ -73,7 +73,7 @@ func main() {
 	defer func() {
 		err = ring.Close()
 		if err != nil {
-			log.Error().Msgf("Could not close ring: %v", err)
+			log.Fatal().Msgf("Could not close ring: %v", err)
 		}
 	}()
 	codec := &cache.Codec{
@@ -87,23 +87,27 @@ func main() {
 	for i, obj := range car.Data {
 		err = redisdriver.SetCar(&obj, codec, string(i))
 		if err != nil {
-			log.Error().Msgf("Could not add car in Redis: %v", err)
+			log.Fatal().Msgf("Could not add car in Redis: %v", err)
 		}
 	}
 
 	// Set DB structure
-	postgresdriver.InitDatabaseStructure()
+	err = postgresdriver.InitDatabaseStructure()
+	if err != nil {
+		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
+	}
 
+	// Set data in DB
 	for i, _ := range car.Data {
 		// Get data fromm Redis
 		newCar, err := redisdriver.GetCar(codec, string(i))
 		if err != nil {
-			log.Error().Msgf("Could not get car from Redis: %v", err)
+			log.Fatal().Msgf("Could not get car from Redis: %v", err)
 		}
 		// Send data in DB
 		err = postgresdriver.SendData(newCar)
 		if err != nil {
-			log.Error().Msgf("Could not send car in Postgres: %v", err)
+			log.Fatal().Msgf("Could not send car in Postgres: %v", err)
 		}
 	}
 }

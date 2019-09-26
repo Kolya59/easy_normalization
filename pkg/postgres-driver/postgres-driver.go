@@ -3,6 +3,7 @@ package postgresdriver
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/psu/easy_normalization/pkg/car"
 	"gitlab.com/gs-iot/gs-firmware/pkg/firmware"
@@ -37,8 +38,19 @@ func InitDatabaseConnection(host string, port string, user string, password stri
 // Init database structure
 func InitDatabaseStructure() (err error) {
 	// Get data from script
+	path := "./script.sql"
+	scriptFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	script := string(scriptFile)
 
 	// Execute script
+	_, err = db.Exec(script)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Close db connection
@@ -91,6 +103,6 @@ func InsertFirmware(bv int, majorFv int, minorFv int, status string, path string
 	return nil
 }
 
-func SendData(newCar car.Car) error {
+func SendData(newCar *car.Car) error {
 	return nil
 }
