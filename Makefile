@@ -1,0 +1,11 @@
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=kolya59
+DB_PASSWORD=12334566w
+REDIS_SERVER=localhost:6379
+REDIS_PASSWORD=
+REDIS_DATABASE=0
+
+run:
+	go run ./cmd/main.go
