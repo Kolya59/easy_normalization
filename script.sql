@@ -46,6 +46,21 @@ create table if not exists brands
 alter table brands
     owner to kolya59;
 
+create unique index if not exists brands_brand_id_uindex
+    on brands (brand_id);
+
+create table if not exists wheels
+(
+    wheel_id     serial  not null
+        constraint wheels_pk
+            primary key,
+    wheel_radius integer not null,
+    wheel_color  text    not null
+);
+
+alter table wheels
+    owner to kolya59;
+
 create table if not exists cars
 (
     model           text    not null,
@@ -62,14 +77,18 @@ create table if not exists cars
             references transmissions
             on update cascade on delete cascade,
     price           integer not null,
+    wheel_id        integer not null
+        constraint cars___wheels
+            references wheels
+            on update cascade on delete cascade,
     constraint cars_pk
-        primary key (model, brand_id, engine_id, transmission_id)
+        primary key (model, brand_id, engine_id, transmission_id, wheel_id)
 );
 
 alter table cars
     owner to kolya59;
 
-create unique index if not exists brands_brand_id_uindex
-    on brands (brand_id);
+create unique index if not exists wheels_wheel_id_uindex
+    on wheels (wheel_id);
 
 
