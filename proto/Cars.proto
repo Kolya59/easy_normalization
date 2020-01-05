@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package helloworld;
+
+service CarSaver {
+    rpc SaveCars (SaveRequest) returns (SaveReply) {}
+}
+
+message SaveRequest {
+    message Car {
+        string Model = 1;
+        string BrandName = 2;
+        string BrandCreatorCountry = 3;
+        string EngineModel = 4;
+        int32  EnginePower = 5;
+        int32  EngineVolume = 6;
+        string EngineType = 7;
+        string TransmissionModel = 8;
+        string TransmissionType = 9;
+        int32  TransmissionGearsNumber = 10;
+        string WheelModel = 11;
+        int32  WheelRadius = 12;
+        string WheelColor = 13;
+        int32  Price = 14;
+    }
+
+    repeated Car cars = 1;
+}
+
+message SaveReply {
+    string message = 1;
+}
