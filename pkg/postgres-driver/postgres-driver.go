@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
+	pb "github.com/kolya59/easy_normalization/proto"
 
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
@@ -55,7 +55,7 @@ func CloseConnection() (err error) {
 }
 
 // Send data to DB
-func SaveCars(cars []car.Car) error {
+func SaveCars(cars []pb.Car) error {
 	// Start transaction
 	tx, err := db.Begin()
 	if err != nil {

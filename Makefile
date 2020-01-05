@@ -12,3 +12,6 @@ deploy-server:
 
 deploy-client:
 	ssh -i "./.ssh/Macbook.pem" ubuntu@ec2-34-245-71-18.eu-west-1.compute.amazonaws.com
+
+proto:
+	protoc -I ./proto/ ./proto/Cars.proto --go_out=plugins=grpc:proto

@@ -9,10 +9,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-func SendCars(cars []car.Car, host, port string) {
+func SendCars(cars []pb.Car, host, port string) {
 	// Send data to server
 	data, err := json.Marshal(cars)
 	if err != nil {

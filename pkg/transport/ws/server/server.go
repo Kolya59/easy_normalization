@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
@@ -22,12 +22,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Close()
-	var cars []car.Car
+	var cars []pb.Car
 
 	// Read data
 	// TODO: Set close handler
 	for {
-		var newCar car.Car
+		var newCar pb.Car
 		if err := c.ReadJSON(&newCar); err != nil {
 			log.Error().Err(err).Msg("Failed to read msg")
 			break

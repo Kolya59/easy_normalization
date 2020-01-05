@@ -12,10 +12,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/vmihailenco/msgpack"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
+	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
 	mqttclient "github.com/kolya59/easy_normalization/pkg/transport/mqtt/client"
 	restclient "github.com/kolya59/easy_normalization/pkg/transport/rest/client"
 	wsclient "github.com/kolya59/easy_normalization/pkg/transport/ws/client"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
 var opts struct {
@@ -25,7 +26,7 @@ var opts struct {
 	RedisPassword string `long:"redis_password" env:"REDIS_PASSWORD" description:"Password for servers" required:"true"`
 	RedisDatabase int    `long:"redis_database" env:"REDIS_DATABASE" description:"Redis database" required:"true"`
 	BrokerHost    string `long:"host" env:"HOST" description:"Host" required:"true"`
-	BrokerPort    int    `long:"port" env:"PORT" description:"Port" required:"true"`
+	BrokerPort    string `long:"port" env:"PORT" description:"Port" required:"true"`
 	User          string `long:"user" env:"USER" description:"Username" required:"true"`
 	Password      string `long:"password" env:"PASS" description:"Password" required:"true"`
 	Topic         string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
@@ -33,7 +34,7 @@ var opts struct {
 }
 
 // Send info to Redis database
-func SetCar(newCar *car.Car, codec *cache.Codec, index string) error {
+func SetCar(newCar *pb.Car, codec *cache.Codec, index string) error {
 	err := codec.Set(&cache.Item{
 		Ctx:        nil,
 		Key:        index,
@@ -49,13 +50,98 @@ func SetCar(newCar *car.Car, codec *cache.Codec, index string) error {
 }
 
 // Get info from Redis data base
-func GetCar(index string, codec *cache.Codec) (newCar *car.Car, err error) {
-	newCar = &car.Car{}
+func GetCar(index string, codec *cache.Codec) (newCar *pb.Car, err error) {
+	newCar = &pb.Car{}
 	err = codec.Get(index, newCar)
 	if err != nil {
 		return nil, err
 	}
 	return newCar, nil
+}
+
+func fillData() []pb.Car {
+	return []pb.Car{
+		{
+			Model:                   "2114",
+			BrandName:               "LADA",
+			BrandCreatorCountry:     "Russia",
+			EngineModel:             "V123",
+			EnginePower:             80,
+			EngineVolume:            16,
+			EngineType:              "L4",
+			TransmissionModel:       "M123",
+			TransmissionType:        "M",
+			TransmissionGearsNumber: 5,
+			WheelModel:              "Luchshie kolesa Rossii",
+			WheelRadius:             13,
+			WheelColor:              "Black",
+			Price:                   120000,
+		},
+		{
+			Model:                   "2115",
+			BrandName:               "LADA",
+			BrandCreatorCountry:     "Russia",
+			EngineModel:             "V124",
+			EnginePower:             100,
+			EngineVolume:            18,
+			EngineType:              "L4",
+			TransmissionModel:       "M123",
+			TransmissionType:        "M",
+			TransmissionGearsNumber: 5,
+			WheelModel:              "Luchshie kolesa Rossii",
+			WheelRadius:             13,
+			WheelColor:              "Black",
+			Price:                   150000,
+		},
+		{
+			Model:                   "Rio",
+			BrandName:               "Kia",
+			BrandCreatorCountry:     "Korea",
+			EngineModel:             "V14234",
+			EnginePower:             100,
+			EngineVolume:            90,
+			EngineType:              "V4",
+			TransmissionModel:       "A123",
+			TransmissionType:        "A",
+			TransmissionGearsNumber: 4,
+			WheelModel:              "Luchie kolesa Kitaya",
+			WheelRadius:             15,
+			WheelColor:              "Red",
+			Price:                   400000,
+		},
+		{
+			Model:                   "Sportage",
+			BrandName:               "Kia",
+			BrandCreatorCountry:     "Korea",
+			EngineModel:             "V14234",
+			EnginePower:             100,
+			EngineVolume:            90,
+			EngineType:              "V4",
+			TransmissionModel:       "A1234",
+			TransmissionType:        "A",
+			TransmissionGearsNumber: 5,
+			WheelModel:              "Luchie kolesa Kitaya",
+			WheelRadius:             15,
+			WheelColor:              "Red",
+			Price:                   400000,
+		},
+		{
+			Model:                   "A500",
+			BrandName:               "Mercedes",
+			BrandCreatorCountry:     "Germany",
+			EngineModel:             "E1488",
+			EnginePower:             300,
+			EngineVolume:            50,
+			EngineType:              "V12",
+			TransmissionModel:       "R123",
+			TransmissionType:        "A",
+			TransmissionGearsNumber: 8,
+			WheelModel:              "Luchshie kolesa Armenii",
+			WheelRadius:             20,
+			WheelColor:              "Green",
+			Price:                   3000000,
+		},
+	}
 }
 
 func main() {
@@ -102,8 +188,8 @@ func main() {
 	}
 
 	// Set data in Redis
-	car.FillData()
-	for i, obj := range car.Data {
+	cars := fillData()
+	for i, obj := range cars {
 		err = SetCar(&obj, codec, string(i))
 		if err != nil {
 			log.Fatal().Msgf("Could not add car in Redis: %v", err)
@@ -111,7 +197,8 @@ func main() {
 	}
 
 	// Send data to server
-	restclient.SendCars(car.Data, opts.Host, opts.Port)
-	wsclient.SendCars(car.Data, opts.Host, opts.Port)
-	mqttclient.SendCars(car.Data, opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
+	restclient.SendCars(cars, opts.Host, opts.Port)
+	wsclient.SendCars(cars, opts.Host, opts.Port)
+	mqttclient.SendCars(cars, opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
+	grpcclient.SendCars(cars, opts.Host, opts.Port)
 }

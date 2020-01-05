@@ -10,10 +10,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-func SendCars(cars []car.Car, host, port string) {
+func SendCars(cars []pb.Car, host, port string) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 

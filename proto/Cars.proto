@@ -1,29 +1,29 @@
 syntax = "proto3";
 
-package helloworld;
+package cars;
 
 service CarSaver {
     rpc SaveCars (SaveRequest) returns (SaveReply) {}
 }
 
-message SaveRequest {
-    message Car {
-        string Model = 1;
-        string BrandName = 2;
-        string BrandCreatorCountry = 3;
-        string EngineModel = 4;
-        int32  EnginePower = 5;
-        int32  EngineVolume = 6;
-        string EngineType = 7;
-        string TransmissionModel = 8;
-        string TransmissionType = 9;
-        int32  TransmissionGearsNumber = 10;
-        string WheelModel = 11;
-        int32  WheelRadius = 12;
-        string WheelColor = 13;
-        int32  Price = 14;
-    }
+message Car {
+    string model = 1;
+    string brand_name = 2;
+    string brand_creator_country = 3;
+    string engine_model = 4;
+    int32  engine_power = 5;
+    int32  engine_volume = 6;
+    string engine_type = 7;
+    string transmission_model = 8;
+    string transmission_type = 9;
+    int32  transmission_gears_number = 10;
+    string wheel_model = 11;
+    int32  wheel_radius = 12;
+    string wheel_color = 13;
+    int32  price = 14;
+}
 
+message SaveRequest {
     repeated Car cars = 1;
 }
 

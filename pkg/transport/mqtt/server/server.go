@@ -8,9 +8,9 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
 	"github.com/kolya59/easy_normalization/pkg/transport/mqtt/common"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
 func listen(uri *url.URL, topic string) {
@@ -27,7 +27,7 @@ func listen(uri *url.URL, topic string) {
 
 func handleConnection(client mqtt.Client, msg mqtt.Message) {
 	// Get data
-	var cars []car.Car
+	var cars []pb.Car
 	if err := json.Unmarshal(msg.Payload(), cars); err != nil {
 		log.Fatal().Err(err).Msg("Failed to unmarshal cars")
 	}

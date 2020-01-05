@@ -9,13 +9,13 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
+	pb "github.com/kolya59/easy_normalization/proto"
 )
 
 func postCar(w http.ResponseWriter, r *http.Request) {
 	type PostReq struct {
-		cars []car.Car
+		cars []pb.Car
 	}
 	// Decode request
 	req := &PostReq{}
