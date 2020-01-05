@@ -197,8 +197,8 @@ func main() {
 	}
 
 	// Send data to server
-	restclient.SendCars(cars, opts.Host, opts.Port)
-	wsclient.SendCars(cars, opts.Host, opts.Port)
-	mqttclient.SendCars(cars, opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
-	grpcclient.SendCars(cars, opts.Host, opts.Port)
+	restclient.SendCars(cars[:2], opts.Host, opts.Port)
+	wsclient.SendCars(cars[1:3], opts.Host, opts.Port)
+	mqttclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
+	grpcclient.SendCars(cars[3:], opts.Host, opts.Port)
 }
