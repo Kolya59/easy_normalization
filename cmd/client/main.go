@@ -13,14 +13,22 @@ import (
 	"github.com/vmihailenco/msgpack"
 
 	"github.com/kolya59/easy_normalization/pkg/car"
-	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
+	mqttclient "github.com/kolya59/easy_normalization/pkg/transport/mqtt/client"
+	restclient "github.com/kolya59/easy_normalization/pkg/transport/rest/client"
+	wsclient "github.com/kolya59/easy_normalization/pkg/transport/ws/client"
 )
 
 var opts struct {
+	Host          string `long:"host" env:"HOST" description:"Server host" required:"true"`
+	Port          string `long:"port" env:"PORT" description:"Server port" required:"true"`
 	RedisServer   string `long:"redis_server" env:"REDIS_SERVER" description:"Redis servers" required:"true"`
 	RedisPassword string `long:"redis_password" env:"REDIS_PASSWORD" description:"Password for servers" required:"true"`
 	RedisDatabase int    `long:"redis_database" env:"REDIS_DATABASE" description:"Redis database" required:"true"`
-	ProfilerPort  string `long:"prof_port" env:"PROF_PORT" description:"Profiler port" required:"false"`
+	BrokerHost    string `long:"host" env:"HOST" description:"Host" required:"true"`
+	BrokerPort    int    `long:"port" env:"PORT" description:"Port" required:"true"`
+	User          string `long:"user" env:"USER" description:"Username" required:"true"`
+	Password      string `long:"password" env:"PASS" description:"Password" required:"true"`
+	Topic         string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 	LogLevel      string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
 }
 
@@ -71,18 +79,6 @@ func main() {
 	}
 	zerolog.SetGlobalLevel(level)
 
-	// Connect to database
-	err = postgresdriver.InitDatabaseConnection(opts.DbHost, opts.DbPort, opts.DbUser, opts.DbPassword, opts.DbName)
-	if err != nil {
-		log.Panic().Msgf("Failed to connect to database: %v", err)
-	}
-	defer func() {
-		err = postgresdriver.CloseConnection()
-		if err != nil {
-			log.Fatal().Msgf("Could not close db connection: %v", err)
-		}
-	}()
-
 	// Redis initialization
 	servers := map[string]string{
 		"server1": "localhost:6379",
@@ -114,23 +110,8 @@ func main() {
 		}
 	}
 
-	// Set DB structure
-	err = postgresdriver.InitDatabaseStructure()
-	if err != nil {
-		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
-	}
-
-	// Set data in DB
-	for i, _ := range car.Data {
-		// Get data fromm Redis
-		newCar, err := GetCar(string(i), codec)
-		if err != nil {
-			log.Fatal().Msgf("Could not get car from Redis: %v", err)
-		}
-		// Send data in DB
-		err = postgresdriver.SendData(newCar)
-		if err != nil {
-			log.Fatal().Msgf("Could not send car in Postgres: %v", err)
-		}
-	}
+	// Send data to server
+	restclient.SendCars(car.Data, opts.Host, opts.Port)
+	wsclient.SendCars(car.Data, opts.Host, opts.Port)
+	mqttclient.SendCars(car.Data, opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
 }

@@ -2,19 +2,18 @@ package main
 
 import (
 	_ "database/sql"
-	"encoding/json"
-	"fmt"
-	"net/http"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
-	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/kolya59/easy_normalization/pkg/car"
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
+	mqttserver "github.com/kolya59/easy_normalization/pkg/transport/mqtt/server"
+	restserver "github.com/kolya59/easy_normalization/pkg/transport/rest/server"
+	wsserver "github.com/kolya59/easy_normalization/pkg/transport/ws/server"
 )
 
 var opts struct {
@@ -26,35 +25,11 @@ var opts struct {
 	DbUser     string `long:"database_username" env:"DB_USER" description:"Database username" required:"true"`
 	DbPassword string `long:"database_password" env:"DB_PASSWORD" description:"Database password" required:"true"`
 	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-}
-
-func PostCar(w http.ResponseWriter, r *http.Request) {
-	type PostReq struct {
-		cars []car.Car
-	}
-	// Decode request
-	req := &PostReq{}
-	var data []byte
-	_, err := r.Body.Read(data)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get body")
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Failed to read body"))
-		return
-	}
-	err = json.Unmarshal(data, req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to decode body")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte("Failed to decode body"))
-		return
-	}
-
-	// Send data in DB
-	if err = postgresdriver.SaveCars(req.cars); err != nil {
-		log.Error().Err(err).Msg("Could not send cars to DB")
-	}
-	w.WriteHeader(http.StatusOK)
+	BrokerHost string `long:"host" env:"HOST" description:"Host" required:"true"`
+	BrokerPort string `long:"port" env:"PORT" description:"Port" required:"true"`
+	User       string `long:"user" env:"USER" description:"Username" required:"true"`
+	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
+	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
 func main() {
@@ -96,22 +71,17 @@ func main() {
 		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
 	}
 
-	// Set rest server
-	r := chi.NewRouter()
-	r.Post("/", PostCar)
+	// Graceful shutdown
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGTERM)
+	signal.Notify(sigint, syscall.SIGINT)
+	done := make(chan interface{})
 
-	srv := http.Server{
-		Addr:    fmt.Sprintf("%s:%s", opts.Host, opts.Port),
-		Handler: r,
-		// TODO: TLS
-		TLSConfig:    nil,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-	}
+	// Start servers
+	go restserver.StartServer(opts.Host, opts.Port, done)
+	go wsserver.StartServer(opts.Host, opts.Port, done)
+	go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
 
-	// Start server
-	log.Info().Msgf("Server is listening on %s:%s", opts.Host, opts.Port)
-	if err = srv.ListenAndServe(); err != nil {
-		log.Fatal().Err(err).Msg("Failed to listen and serve")
-	}
+	<-sigint
+	close(done)
 }
