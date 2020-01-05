@@ -1,6 +1,6 @@
 create table if not exists engines
 (
-    engine_id     serial  not null
+    engine_id     uuid  not null
         constraint engines_pk
             primary key,
     engine_model  text    not null,
@@ -23,7 +23,7 @@ create table if not exists transmissions
     transmission_model        text    not null,
     transmission_type         text    not null,
     transmission_gears_number integer not null,
-    transmission_id           serial  not null
+    transmission_id           uuid  not null
         constraint transmissions_pk
             primary key
 );
@@ -39,7 +39,7 @@ create unique index if not exists transmissions_transmission_id_uindex
 
 create table if not exists brands
 (
-    brand_id              serial not null
+    brand_id              uuid not null
         constraint brands_pk
             primary key,
     brand_name            text   not null,
@@ -57,7 +57,7 @@ create unique index if not exists brands_brand_name_uindex
 
 create table if not exists wheels
 (
-    wheel_id     serial  not null
+    wheel_id     uuid not null
         constraint wheels_pk
             primary key,
     wheel_radius integer not null,
@@ -76,22 +76,21 @@ create unique index if not exists wheels_wheel_model_uindex
 
 create table if not exists cars
 (
+    id uuid not null primary key,
     model           text    not null,
-    brand_id        integer not null
+    brand_id        uuid not null
         constraint cars___brands
             references brands,
-    engine_id       integer not null
+    engine_id       uuid not null
         constraint cars___engines
             references engines,
-    transmission_id integer not null
+    transmission_id uuid not null
         constraint cars___transmissions
             references transmissions,
     price           integer not null,
-    wheel_id        integer not null
+    wheel_id        uuid not null
         constraint cars___wheels
-            references wheels,
-    constraint cars_pk
-        primary key (model, brand_id, engine_id, transmission_id, wheel_id)
+            references wheels
 );
 
 alter table cars

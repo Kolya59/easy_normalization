@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="easy_normalization@localhost" uuid="12f433e0-9344-4763-9699-405b9664b5e9">
+    <data-source source="LOCAL" name="cars@localhost" uuid="12f433e0-9344-4763-9699-405b9664b5e9">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/easy_normalization</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/cars</jdbc-url>
     </data-source>
   </component>
 </project>

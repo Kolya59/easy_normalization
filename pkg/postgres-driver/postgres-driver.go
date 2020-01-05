@@ -4,24 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
-	"github.com/psu/easy_normalization/pkg/car"
+	sq "github.com/Masterminds/squirrel"
+
+	"github.com/kolya59/easy_normalization/pkg/car"
 
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	insertEngineQuery       = "INSERT INTO easy_normalization.normal.engines(engine_model, engine_power, engine_volume, engine_type) VALUES ($1, $2, $3, $4)"
-	selectEngineQuery       = "SELECT engine_id FROM easy_normalization.normal.engines WHERE engine_model = $1"
-	insertTransmissionQuery = "INSERT INTO easy_normalization.normal.transmissions(transmission_model, transmission_type, transmission_gears_number) VALUES ($1, $2, $3)"
-	selectTransmissionQuery = "SELECT transmission_id FROM easy_normalization.normal.transmissions WHERE transmission_model = $1"
-	insertBrandQuery        = "INSERT INTO easy_normalization.normal.brands(brand_name, brand_creator_country) VALUES ($1, $2)"
-	selectBrandQuery        = "SELECT brand_id FROM easy_normalization.normal.brands WHERE brand_name = $1"
-	insertWheelQuery        = "INSERT INTO easy_normalization.normal.wheels(wheel_model, wheel_radius, wheel_color) VALUES ($1, $2, $3)"
-	selectWheelQuery        = "SELECT wheel_id FROM easy_normalization.normal.wheels WHERE wheel_model = $1"
-	insertCarQuery          = "INSERT INTO easy_normalization.normal.cars(model, engine_id, transmission_id, brand_id, wheel_id, price) VALUES ($1, $2, $3, $4, $5, $6)"
 )
 
 var db *sql.DB
@@ -66,171 +55,52 @@ func CloseConnection() (err error) {
 }
 
 // Send data to DB
-func SendData(newCar *car.Car) error {
-	selectEngine, err := db.Prepare(selectEngineQuery)
+func SaveCars(cars []car.Car) error {
+	// Start transaction
+	tx, err := db.Begin()
 	if err != nil {
-		return fmt.Errorf("could not prepare select query: %v", err)
+		return err
 	}
-	defer func() {
-		err = selectEngine.Close()
+
+	// Prepare queries
+	queries := make(map[string]sq.InsertBuilder)
+	queries["insertEngineQuery"] = sq.Insert("engines")
+	queries["insertTransmissionQuery"] = sq.Insert("transmissions")
+	queries["insertBrandQuery"] = sq.Insert("brands")
+	queries["insertWheelQuery"] = sq.Insert("wheels")
+	queries["insertCarQuery"] = sq.Insert("cars").Columns("model", "engine", "transmission", "brand", "wheel", "price")
+
+	// Bind arguments to queries
+	for _, c := range cars {
+		queries["insertEngineQuery"].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
+		queries["insertTransmissionQuery"].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
+		queries["insertBrandQuery"].Values(c.BrandName, c.BrandCreatorCountry)
+		queries["insertWheelQuery"].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
+		queries["insertCarQuery"].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
+	}
+
+	// Execute queries
+	for _, query := range queries {
+		convertedQuery, _, err := query.ToSql()
 		if err != nil {
-			log.Error().Err(err).Msgf("Could not close database connection:")
+			return err
 		}
-	}()
-	var engineId int
-	err = selectEngine.QueryRow(newCar.EngineModel).Scan(&engineId)
-	if err != nil && strings.Contains(err.Error(), "not rows") {
-		insertEngine, err := db.Prepare(insertEngineQuery)
-		if err != nil {
-			return fmt.Errorf("could not prepare insert query: %v", err)
-		}
-		defer func() {
-			err = insertEngine.Close()
-			if err != nil {
-				log.Error().Err(err).Msgf("Could not close database connection:")
+		convertedQuery += " ON CONFLICT DO NOTHING"
+		if _, err = tx.Exec(convertedQuery); err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				log.Error().Err(rbErr).Msg("Failed to rollback transaction")
 			}
-		}()
-		_, err = insertEngine.Exec(newCar.EngineModel, newCar.EnginePower, newCar.EngineVolume, newCar.EngineType)
-		if err != nil {
-			return fmt.Errorf("could not insert engine into database: %v", err)
+			return err
 		}
-		err = selectEngine.QueryRow(newCar.EngineModel).Scan(&engineId)
-		if err != nil {
-			return fmt.Errorf("could not select firmware: %v", err)
-		}
-		log.Info().Msgf("Engine %v, %v, %v, %v is added in database", newCar.EngineModel, newCar.EnginePower, newCar.EngineVolume, newCar.EngineType)
-	} else {
-		log.Info().Msgf("Engine id %v exist", engineId)
 	}
 
-	selectTransmission, err := db.Prepare(selectTransmissionQuery)
-	if err != nil {
-		return fmt.Errorf("could not prepare select query: %v", err)
-	}
-	defer func() {
-		err = selectTransmission.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("Could not close database connection:")
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			log.Error().Err(rbErr).Msg("Failed to rollback transaction")
 		}
-	}()
-	var transmissionId int
-	err = selectTransmission.QueryRow(newCar.TransmissionModel).Scan(&transmissionId)
-	if err != nil && strings.Contains(err.Error(), "not rows") {
-		insertTransmission, err := db.Prepare(insertTransmissionQuery)
-		if err != nil {
-			return fmt.Errorf("could not prepare insert query: %v", err)
-		}
-		defer func() {
-			err = insertTransmission.Close()
-			if err != nil {
-				log.Error().Err(err).Msgf("Could not close database connection:")
-			}
-		}()
-
-		_, err = insertTransmission.Exec(newCar.TransmissionModel, newCar.TransmissionType, newCar.TransmissionGearsNumber)
-		if err != nil {
-			return fmt.Errorf("could not insert transmission into database: %v", err)
-		}
-
-		err = selectTransmission.QueryRow(newCar.TransmissionModel).Scan(&transmissionId)
-		if err != nil {
-			return fmt.Errorf("could not select firmware: %v", err)
-		}
-		log.Info().Msgf("Transmission %v, %v, %v is added in database", newCar.TransmissionModel, newCar.TransmissionType, newCar.TransmissionGearsNumber)
-	} else {
-		log.Info().Msgf("Transmission id %v exist", transmissionId)
+		return err
 	}
 
-	selectBrand, err := db.Prepare(selectBrandQuery)
-	if err != nil {
-		return fmt.Errorf("could not prepare select query: %v", err)
-	}
-	defer func() {
-		err = selectBrand.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("Could not close database connection:")
-		}
-	}()
-	var brandId int
-	err = selectTransmission.QueryRow(newCar.BrandName).Scan(&brandId)
-	if err != nil && strings.Contains(err.Error(), "not rows") {
-		insertBrand, err := db.Prepare(insertBrandQuery)
-		if err != nil {
-			return fmt.Errorf("could not prepare insert query: %v", err)
-		}
-		defer func() {
-			err = insertBrand.Close()
-			if err != nil {
-				log.Error().Err(err).Msgf("Could not close database connection:")
-			}
-		}()
-		_, err = insertBrand.Exec(newCar.BrandName, newCar.BrandCreatorCountry)
-		if err != nil {
-			return fmt.Errorf("could not insert brand into database: %v", err)
-		}
-
-		err = selectBrand.QueryRow(newCar.BrandName).Scan(&brandId)
-		if err != nil {
-			return fmt.Errorf("could not select firmware: %v", err)
-		}
-		log.Info().Msgf("Brand %v, %v is added in database", newCar.BrandName, newCar.BrandCreatorCountry)
-
-	} else {
-		log.Info().Msgf("Brand id %v exist", brandId)
-	}
-
-	selectWheel, err := db.Prepare(selectWheelQuery)
-	if err != nil {
-		return fmt.Errorf("could not prepare select query: %v", err)
-	}
-	defer func() {
-		err = selectWheel.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("Could not close database connection:")
-		}
-	}()
-	var wheelId int
-	err = selectTransmission.QueryRow(newCar.WheelModel).Scan(&wheelId)
-	if err != nil && strings.Contains(err.Error(), "not rows") {
-		insertWheel, err := db.Prepare(insertWheelQuery)
-		if err != nil {
-			return fmt.Errorf("could not prepare insert query: %v", err)
-		}
-		defer func() {
-			err = insertWheel.Close()
-			if err != nil {
-				log.Error().Err(err).Msgf("Could not close database connection:")
-			}
-		}()
-		_, err = insertWheel.Exec(newCar.WheelModel, newCar.WheelRadius, newCar.WheelColor)
-		if err != nil {
-			return fmt.Errorf("could not insert wheel into database: %v", err)
-		}
-
-		err = selectWheel.QueryRow(newCar.WheelModel).Scan(&wheelId)
-		if err != nil {
-			return fmt.Errorf("could not select wheel: %v", err)
-		}
-		log.Info().Msgf("Wheel %v, %v, %v is added in database", newCar.WheelModel, newCar.WheelRadius, newCar.WheelColor)
-	} else {
-		log.Info().Msgf("Wheel id %v exist", wheelId)
-	}
-
-	insertCar, err := db.Prepare(insertCarQuery)
-	if err != nil {
-		return fmt.Errorf("could not prepare insert query: %v", err)
-	}
-	defer func() {
-		err = insertCar.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("Could not close database connection:")
-		}
-	}()
-	log.Info().Msgf("Car %v, %v, %v, %v, %v, %v is database prepared to add", newCar.Model, engineId, transmissionId, brandId, wheelId, newCar.Price)
-	_, err = insertCar.Exec(newCar.Model, engineId, transmissionId, brandId, wheelId, newCar.Price)
-	if err != nil {
-		return fmt.Errorf("could not insert car into database: %v", err)
-	}
-	log.Info().Msgf("Car %v, %v, %v, %v, %v, %v is added in database", newCar.Model, engineId, transmissionId, brandId, wheelId, newCar.Price)
 	return nil
 }
