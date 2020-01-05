@@ -15,6 +15,9 @@ alter table engines
 create unique index if not exists engines_engine_id_uindex
     on engines (engine_id);
 
+create unique index if not exists engines_engine_model_uindex
+    on engines (engine_model);
+
 create table if not exists transmissions
 (
     transmission_model        text    not null,
@@ -49,46 +52,48 @@ alter table brands
 create unique index if not exists brands_brand_id_uindex
     on brands (brand_id);
 
+create unique index if not exists brands_brand_name_uindex
+    on brands (brand_name);
+
 create table if not exists wheels
 (
     wheel_id     serial  not null
         constraint wheels_pk
             primary key,
     wheel_radius integer not null,
-    wheel_color  text    not null
+    wheel_color  text    not null,
+    wheel_model  text    not null
 );
 
 alter table wheels
     owner to kolya59;
+
+create unique index if not exists wheels_wheel_id_uindex
+    on wheels (wheel_id);
+
+create unique index if not exists wheels_wheel_model_uindex
+    on wheels (wheel_model);
 
 create table if not exists cars
 (
     model           text    not null,
     brand_id        integer not null
         constraint cars___brands
-            references brands
-            on update cascade on delete cascade,
+            references brands,
     engine_id       integer not null
         constraint cars___engines
-            references engines
-            on update cascade on delete cascade,
+            references engines,
     transmission_id integer not null
         constraint cars___transmissions
-            references transmissions
-            on update cascade on delete cascade,
+            references transmissions,
     price           integer not null,
     wheel_id        integer not null
         constraint cars___wheels
-            references wheels
-            on update cascade on delete cascade,
+            references wheels,
     constraint cars_pk
         primary key (model, brand_id, engine_id, transmission_id, wheel_id)
 );
 
 alter table cars
     owner to kolya59;
-
-create unique index if not exists wheels_wheel_id_uindex
-    on wheels (wheel_id);
-
 

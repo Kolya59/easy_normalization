@@ -3,16 +3,17 @@ package main
 import (
 	_ "database/sql"
 	"os"
+	"time"
 
 	"github.com/go-redis/cache"
 	"github.com/go-redis/redis"
 	"github.com/jessevdk/go-flags"
-	"github.com/psu/easy_normalization/pkg/car"
-	postgresdriver "github.com/psu/easy_normalization/pkg/postgres-driver"
-	redisdriver "github.com/psu/easy_normalization/pkg/redis-driver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/vmihailenco/msgpack"
+
+	"github.com/psu/easy_normalization/pkg/car"
+	postgresdriver "github.com/psu/easy_normalization/pkg/postgres-driver"
 )
 
 var opts struct {
@@ -28,6 +29,32 @@ var opts struct {
 	LogLevel      string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
 }
 
+// Send info to Redis database
+func SetCar(newCar *car.Car, codec *cache.Codec, index string) error {
+	err := codec.Set(&cache.Item{
+		Ctx:        nil,
+		Key:        index,
+		Object:     newCar,
+		Func:       nil,
+		Expiration: time.Minute,
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Get info from Redis data base
+func GetCar(index string, codec *cache.Codec) (newCar *car.Car, err error) {
+	newCar = &car.Car{}
+	err = codec.Get(index, newCar)
+	if err != nil {
+		return nil, err
+	}
+	return newCar, nil
+}
+
 func main() {
 	// Log initialization
 	zerolog.MessageFieldName = "MESSAGE"
@@ -35,7 +62,7 @@ func main() {
 	zerolog.ErrorFieldName = "ERROR"
 	zerolog.TimestampFieldName = "TIME"
 	zerolog.CallerFieldName = "CALLER"
-	log.Logger = log.Output(os.Stderr).With().Str("PROGRAM", "firmware-update-server").Caller().Logger()
+	log.Logger = log.Output(os.Stderr).With().Str("PROGRAM", "easy-normalization").Caller().Logger()
 
 	// Parse flags
 	_, err := flags.ParseArgs(&opts, os.Args)
@@ -63,19 +90,20 @@ func main() {
 
 	// Redis initialization
 	servers := map[string]string{
-		"server1": opts.RedisServer,
+		"server1": "localhost:6379",
 	}
 	ring := redis.NewRing(&redis.RingOptions{
 		Addrs:    servers,
-		Password: opts.RedisPassword,
-		DB:       opts.RedisDatabase,
+		Password: "",
+		DB:       0,
 	})
 	defer func() {
-		err = ring.Close()
+		err := ring.Close()
 		if err != nil {
 			log.Fatal().Msgf("Could not close ring: %v", err)
 		}
 	}()
+
 	codec := &cache.Codec{
 		Redis:     ring,
 		Marshal:   msgpack.Marshal,
@@ -85,7 +113,7 @@ func main() {
 	// Set data in Redis
 	car.FillData()
 	for i, obj := range car.Data {
-		err = redisdriver.SetCar(&obj, codec, string(i))
+		err = SetCar(&obj, codec, string(i))
 		if err != nil {
 			log.Fatal().Msgf("Could not add car in Redis: %v", err)
 		}
@@ -100,7 +128,7 @@ func main() {
 	// Set data in DB
 	for i, _ := range car.Data {
 		// Get data fromm Redis
-		newCar, err := redisdriver.GetCar(codec, string(i))
+		newCar, err := GetCar(string(i), codec)
 		if err != nil {
 			log.Fatal().Msgf("Could not get car from Redis: %v", err)
 		}
