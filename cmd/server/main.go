@@ -25,8 +25,8 @@ var opts struct {
 	DbUser     string `long:"database_username" env:"DB_USER" description:"Database username" required:"true"`
 	DbPassword string `long:"database_password" env:"DB_PASSWORD" description:"Database password" required:"true"`
 	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	BrokerHost string `long:"host" env:"HOST" description:"Host" required:"true"`
-	BrokerPort string `long:"port" env:"PORT" description:"Port" required:"true"`
+	BrokerHost string `long:"host" env:"BROKER_HOST" description:"Host" required:"true"`
+	BrokerPort string `long:"port" env:"BROKER_PORT" description:"Port" required:"true"`
 	User       string `long:"user" env:"USER" description:"Username" required:"true"`
 	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
 	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`

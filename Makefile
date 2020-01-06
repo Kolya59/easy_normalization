@@ -1,21 +1,36 @@
 all: build run
 
-build: build-server build-client
+build-all: build-mac build-win build-linux
 
-build-server:
-	go build -o ./bin/server.app ./cmd/server/main.go
+build-mac: build-server-mac build-client-mac
 
-build-client:
-	go build -o ./bin/client.app ./cmd/client/main.go
+build-server-mac:
+	GOOS=darwin GOARCH=amd64 go build -o ./bin/mac/server.app ./cmd/server/main.go
 
-run:
-	DB_HOST=localhost DB_PORT=5432 DB_NAME=easy_normalization DB_USER=kolya59 DB_PASSWORD=12334566w REDIS_SERVER=localhost:6379  REDIS_DATABASE=0 REDIS_PASSWORD= ./bin/server.app
+build-client-mac:
+	GOOS=darwin GOARCH=amd64 go build -o ./bin/mac/client.app ./cmd/client/main.go
 
-deploy-server:
-	ssh -i "./.ssh/Macbook.pem" ubuntu@ec2-34-251-15-102.eu-west-1.compute.amazonaws.com
+build-win: build-server-win build-client-win
 
-deploy-client:
-	ssh -i "./.ssh/Macbook.pem" ubuntu@ec2-34-245-71-18.eu-west-1.compute.amazonaws.com
+build-server-win:
+	GOOS=windows GOARCH=amd64 go build -o ./bin/win/server.exe ./cmd/server/main.go
+
+build-client-win:
+	GOOS=windows GOARCH=amd64 go build -o ./bin/win/client.exe ./cmd/client/main.go
+
+build-linux: build-server-linux build-client-linux
+
+build-server-linux:
+	GOOS=linux GOARCH=amd64 go build -o ./bin/linux/server.bin ./cmd/server/main.go
+
+build-client-linux:
+	GOOS=linux GOARCH=amd64 go build -o ./bin/linux/client.bin ./cmd/client/main.go
+
+run: setup-env
+	./bin/server.app
 
 proto:
 	protoc -I ./proto/ ./proto/Cars.proto --go_out=plugins=grpc:proto
+
+setup-env:
+	export `cat .env`
