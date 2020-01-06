@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="gcloud">
+  <component name="PublishConfigData" serverName="gcloud" deleteMissingItems="true" createEmptyFolders="true">
     <serverData>
       <paths name="gcloud">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/server" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
+	grpcserver "github.com/kolya59/easy_normalization/pkg/transport/grpc/server"
 	mqttserver "github.com/kolya59/easy_normalization/pkg/transport/mqtt/server"
 	restserver "github.com/kolya59/easy_normalization/pkg/transport/rest/server"
 	wsserver "github.com/kolya59/easy_normalization/pkg/transport/ws/server"
@@ -25,8 +26,8 @@ var opts struct {
 	DbUser     string `long:"database_username" env:"DB_USER" description:"Database username" required:"true"`
 	DbPassword string `long:"database_password" env:"DB_PASSWORD" description:"Database password" required:"true"`
 	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	BrokerHost string `long:"host" env:"BROKER_HOST" description:"Host" required:"true"`
-	BrokerPort string `long:"port" env:"BROKER_PORT" description:"Port" required:"true"`
+	BrokerHost string `long:"broker_host" env:"BROKER_HOST" description:"Host" required:"true"`
+	BrokerPort string `long:"broker_port" env:"BROKER_PORT" description:"Port" required:"true"`
 	User       string `long:"user" env:"USER" description:"Username" required:"true"`
 	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
 	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
@@ -42,8 +43,7 @@ func main() {
 	log.Logger = log.Output(os.Stderr).With().Str("PROGRAM", "easy-normalization").Caller().Logger()
 
 	// Parse flags
-	_, err := flags.ParseArgs(&opts, os.Args)
-	if err != nil {
+	if _, err := flags.ParseArgs(&opts, os.Args); err != nil {
 		log.Panic().Msgf("Could not parse flags: %v", err)
 	}
 
@@ -54,22 +54,21 @@ func main() {
 	zerolog.SetGlobalLevel(level)
 
 	// Connect to database
-	err = postgresdriver.InitDatabaseConnection(opts.DbHost, opts.DbPort, opts.DbUser, opts.DbPassword, opts.DbName)
-	if err != nil {
-		log.Panic().Msgf("Failed to connect to database: %v", err)
+	log.Debug().Msg("Try to connect to database")
+	if err = postgresdriver.InitDatabaseConnection(opts.DbHost, opts.DbPort, opts.DbUser, opts.DbPassword, opts.DbName); err != nil {
+		log.Fatal().Msgf("Failed to connect to database: %v", err)
 	}
 	defer func() {
-		err = postgresdriver.CloseConnection()
-		if err != nil {
+		if err = postgresdriver.CloseConnection(); err != nil {
 			log.Fatal().Msgf("Could not close db connection: %v", err)
 		}
 	}()
 
-	// TODO: Set DB structure?
-	err = postgresdriver.InitDatabaseStructure()
-	if err != nil {
+	/*// Set DB structure?
+	log.Debug().Msg("Try to set database structure")
+	if err = postgresdriver.InitDatabaseStructure(); err != nil {
 		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
-	}
+	}*/
 
 	// Graceful shutdown
 	sigint := make(chan os.Signal, 1)
@@ -79,8 +78,13 @@ func main() {
 
 	// Start servers
 	go restserver.StartServer(opts.Host, opts.Port, done)
+	log.Info().Msg("Started REST server")
 	go wsserver.StartServer(opts.Host, opts.Port, done)
+	log.Info().Msg("Started WS server")
 	go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
+	log.Info().Msg("Started MQTT server")
+	go grpcserver.StartServer(opts.Host, opts.Port)
+	log.Info().Msg("Started GRPC server")
 
 	<-sigint
 	close(done)
