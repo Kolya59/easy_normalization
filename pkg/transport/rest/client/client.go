@@ -19,9 +19,8 @@ func SendCars(cars []pb.Car, host, port string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to marshal data")
 	}
-	body := bytes.NewReader(data)
 	u := url.URL{Scheme: "http", Host: fmt.Sprintf("%s:%s", host, port), Path: "/"}
-	resp, err := http.Post(u.String(), "application/json", body)
+	resp, err := http.Post(u.String(), "application/json", bytes.NewReader(data))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to send request")
 	}

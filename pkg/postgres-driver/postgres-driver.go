@@ -77,16 +77,16 @@ func SaveCars(cars []pb.Car) error {
 
 	// Bind arguments to queries
 	for _, c := range cars {
-		queries["insertEngineQuery"].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
-		queries["insertTransmissionQuery"].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
-		queries["insertBrandQuery"].Values(c.BrandName, c.BrandCreatorCountry)
-		queries["insertWheelQuery"].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
-		queries["insertCarQuery"].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
+		queries["insertEngineQuery"] = queries["insertEngineQuery"].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
+		queries["insertTransmissionQuery"] = queries["insertTransmissionQuery"].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
+		queries["insertBrandQuery"] = queries["insertBrandQuery"].Values(c.BrandName, c.BrandCreatorCountry)
+		queries["insertWheelQuery"] = queries["insertWheelQuery"].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
+		queries["insertCarQuery"] = queries["insertCarQuery"].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
 	}
 
 	// Execute queries
 	for _, query := range queries {
-		query.Suffix("ON CONFLICT DO NOTHING")
+		query = query.Suffix("ON CONFLICT DO NOTHING")
 		if _, err = query.RunWith(tx).Exec(); err != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
 				log.Error().Err(rbErr).Msg("Failed to rollback transaction")

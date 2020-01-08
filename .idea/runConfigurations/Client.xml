@@ -2,6 +2,7 @@
   <configuration default="false" name="Client" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false">
     <module name="easy_normalization" />
     <working_directory value="$PROJECT_DIR$/" />
+    <go_parameters value="-i" />
     <EXTENSION ID="net.ashald.envfile">
       <option name="IS_ENABLED" value="true" />
       <option name="IS_SUBST" value="false" />

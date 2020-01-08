@@ -5,7 +5,7 @@
       <paths name="gcloud">
         <serverdata>
           <mappings>
-            <mapping deploy="/server" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/kolya59/server" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
