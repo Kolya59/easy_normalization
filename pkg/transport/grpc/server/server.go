@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"github.com/rs/zerolog/log"
@@ -32,7 +33,7 @@ func (s *server) SaveCars(ctx context.Context, in *pb.SaveRequest) (*pb.SaveRepl
 }
 
 func StartServer(host, port string) {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", fmt.Sprintf("%v:%v", host, port))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to listen")
 	}
