@@ -86,6 +86,9 @@ func main() {
 	go grpcserver.StartServer(opts.Host, opts.Port)
 	log.Info().Msg("Started GRPC server")
 
-	<-sigint
-	close(done)
+	// Wait interrupt signal
+	select {
+	case <-sigint:
+		close(done)
+	}
 }
