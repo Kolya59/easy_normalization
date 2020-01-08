@@ -19,7 +19,10 @@ import (
 
 var opts struct {
 	Host       string `long:"host" env:"HOST" description:"Server host" required:"true"`
-	Port       string `long:"port" env:"PORT" description:"Server port" required:"true"`
+	RESTPort   string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
+	WSPort     string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	MQTTPort   string `long:"mqtt_port" env:"MQTT_PORT" description:"Server port" required:"true"`
+	GRPCPort   string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
 	DbHost     string `long:"database_host" env:"DB_HOST" description:"Database host" required:"true"`
 	DbPort     string `long:"database_port" env:"DB_PORT" description:"Database port" required:"true"`
 	DbName     string `long:"database_name" env:"DB_NAME" description:"Database name" required:"true"`
@@ -77,13 +80,13 @@ func main() {
 	done := make(chan interface{})
 
 	// Start servers
-	go restserver.StartServer(opts.Host, opts.Port, done)
+	go restserver.StartServer(opts.Host, opts.RESTPort, done)
 	log.Info().Msg("Started REST server")
-	go wsserver.StartServer(opts.Host, opts.Port, done)
+	go wsserver.StartServer(opts.Host, opts.WSPort, done)
 	log.Info().Msg("Started WS server")
 	go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
 	log.Info().Msg("Started MQTT server")
-	go grpcserver.StartServer(opts.Host, opts.Port)
+	go grpcserver.StartServer(opts.Host, opts.GRPCPort)
 	log.Info().Msg("Started GRPC server")
 
 	// Wait interrupt signal
