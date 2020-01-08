@@ -39,11 +39,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err = postgresdriver.SaveCars(cars); err != nil {
 		log.Error().Err(err).Msg("Could not send cars to DB")
 	}
+	log.Info().Msgf("Cars %v was saved via WS", cars)
 }
 
 func StartServer(host, port string, done chan interface{}) {
 	r := chi.NewRouter()
-	r.HandleFunc("/ws", handler)
+	r.HandleFunc("/", handler)
 
 	// TODO: Open WS server
 	srv := http.Server{

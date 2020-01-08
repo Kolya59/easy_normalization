@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/go-redis/cache"
-	"github.com/go-redis/redis"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/vmihailenco/msgpack"
 
 	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
 	mqttclient "github.com/kolya59/easy_normalization/pkg/transport/mqtt/client"
@@ -20,17 +18,16 @@ import (
 )
 
 var opts struct {
-	Host          string `long:"host" env:"HOST" description:"Server host" required:"true"`
-	Port          string `long:"port" env:"PORT" description:"Server port" required:"true"`
-	RedisServer   string `long:"redis_server" env:"REDIS_SERVER" description:"Redis servers" required:"true"`
-	RedisPassword string `long:"redis_password" env:"REDIS_PASSWORD" description:"Password for servers" required:"true"`
-	RedisDatabase int    `long:"redis_database" env:"REDIS_DATABASE" description:"Redis database" required:"true"`
-	BrokerHost    string `long:"host" env:"HOST" description:"Host" required:"true"`
-	BrokerPort    string `long:"port" env:"PORT" description:"Port" required:"true"`
-	User          string `long:"user" env:"USER" description:"Username" required:"true"`
-	Password      string `long:"password" env:"PASS" description:"Password" required:"true"`
-	Topic         string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
-	LogLevel      string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
+	Host       string `long:"host" env:"HOST" description:"Server host" required:"true"`
+	RESTPort   string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
+	WSPort     string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	GRPCPort   string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
+	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
+	BrokerHost string `long:"broker_host" env:"BROKER_HOST" description:"Host" required:"true"`
+	BrokerPort string `long:"broker_port" env:"BROKER_PORT" description:"Port" required:"true"`
+	User       string `long:"user" env:"USER" description:"Username" required:"true"`
+	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
+	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
 // Send info to Redis database
@@ -166,7 +163,7 @@ func main() {
 	zerolog.SetGlobalLevel(level)
 
 	// Redis initialization
-	servers := map[string]string{
+	/*servers := map[string]string{
 		"server1": "localhost:6379",
 	}
 	ring := redis.NewRing(&redis.RingOptions{
@@ -194,11 +191,12 @@ func main() {
 		if err != nil {
 			log.Fatal().Msgf("Could not add car in Redis: %v", err)
 		}
-	}
+	}*/
+	cars := fillData()
 
 	// Send data to server
-	restclient.SendCars(cars[:2], opts.Host, opts.Port)
-	wsclient.SendCars(cars[1:3], opts.Host, opts.Port)
+	restclient.SendCars(cars[:2], opts.Host, opts.RESTPort)
+	wsclient.SendCars(cars[1:3], opts.Host, opts.WSPort)
 	mqttclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
-	grpcclient.SendCars(cars[3:], opts.Host, opts.Port)
+	grpcclient.SendCars(cars[3:], opts.Host, opts.GRPCPort)
 }

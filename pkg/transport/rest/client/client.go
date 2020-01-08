@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/rs/zerolog/log"
 
@@ -19,7 +20,8 @@ func SendCars(cars []pb.Car, host, port string) {
 		log.Fatal().Err(err).Msg("Failed to marshal data")
 	}
 	body := bytes.NewReader(data)
-	resp, err := http.Post(fmt.Sprintf("%s:%s", host, port), "application/json", body)
+	u := url.URL{Scheme: "http", Host: fmt.Sprintf("%s:%s", host, port), Path: "/"}
+	resp, err := http.Post(u.String(), "application/json", body)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to send request")
 	}

@@ -14,11 +14,6 @@ import (
 )
 
 func postCar(w http.ResponseWriter, r *http.Request) {
-	type PostReq struct {
-		cars []pb.Car
-	}
-	// Decode request
-	req := &PostReq{}
 	var data []byte
 	_, err := r.Body.Read(data)
 	if err != nil {
@@ -27,7 +22,8 @@ func postCar(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Failed to read body"))
 		return
 	}
-	err = json.Unmarshal(data, req)
+	var cars []pb.Car
+	err = json.Unmarshal(data, cars)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to decode body")
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -36,9 +32,10 @@ func postCar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send data in DB
-	if err = postgresdriver.SaveCars(req.cars); err != nil {
+	if err = postgresdriver.SaveCars(cars); err != nil {
 		log.Error().Err(err).Msg("Could not send cars to DB")
 	}
+	log.Info().Msgf("Cars %v was saved via REST", cars)
 	w.WriteHeader(http.StatusOK)
 }
 

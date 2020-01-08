@@ -35,6 +35,8 @@ func handleConnection(client mqtt.Client, msg mqtt.Message) {
 	if err := postgresdriver.SaveCars(cars); err != nil {
 		log.Error().Err(err).Msg("Could not send cars to DB")
 	}
+	log.Info().Msgf("Cars %v was saved via MQTT", cars)
+
 }
 
 func StartServer(brokerHost, brokerPort, user, password, topic string, done chan interface{}) {

@@ -21,7 +21,6 @@ var opts struct {
 	Host       string `long:"host" env:"HOST" description:"Server host" required:"true"`
 	RESTPort   string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
 	WSPort     string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
-	MQTTPort   string `long:"mqtt_port" env:"MQTT_PORT" description:"Server port" required:"true"`
 	GRPCPort   string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
 	DbHost     string `long:"database_host" env:"DB_HOST" description:"Database host" required:"true"`
 	DbPort     string `long:"database_port" env:"DB_PORT" description:"Database port" required:"true"`
