@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -14,17 +15,16 @@ import (
 )
 
 func postCar(w http.ResponseWriter, r *http.Request) {
-	var data []byte
-	_, err := r.Body.Read(data)
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get body")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("Failed to read body"))
 		return
 	}
+	defer r.Body.Close()
 	var cars []pb.Car
-	err = json.Unmarshal(data, cars)
-	if err != nil {
+	if err = json.Unmarshal(data, &cars); err != nil {
 		log.Error().Err(err).Msg("Failed to decode body")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		_, _ = w.Write([]byte("Failed to decode body"))

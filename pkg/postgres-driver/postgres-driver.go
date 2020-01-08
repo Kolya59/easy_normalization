@@ -63,25 +63,25 @@ func SaveCars(cars []pb.Car) error {
 	}
 
 	// Prepare queries
-	queries := make([]sq.InsertBuilder, 5)
-	queries[0] = sq.StatementBuilder.Insert("engines").
+	queries := make(map[string]sq.InsertBuilder)
+	queries["insertEngineQuery"] = sq.Insert("engines").
 		Columns("engine_model", "engine_power", "engine_volume", "engine_type")
-	queries[1] = sq.StatementBuilder.Insert("transmissions").
+	queries["insertTransmissionQuery"] = sq.Insert("transmissions").
 		Columns("transmission_model", "transmission_type", "transmission_gears_number")
-	queries[2] = sq.StatementBuilder.Insert("brands").
+	queries["insertBrandQuery"] = sq.Insert("brands").
 		Columns("brand_name", "brand_creator_country")
-	queries[3] = sq.StatementBuilder.Insert("wheels").
+	queries["insertWheelQuery"] = sq.Insert("wheels").
 		Columns("wheel_radius", "wheel_color", "wheel_model")
-	queries[4] = sq.StatementBuilder.Insert("cars").
+	queries["insertCarQuery"] = sq.Insert("cars").
 		Columns("model", "engine", "transmission", "brand", "wheel", "price")
 
 	// Bind arguments to queries
 	for _, c := range cars {
-		queries[0].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
-		queries[1].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
-		queries[2].Values(c.BrandName, c.BrandCreatorCountry)
-		queries[3].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
-		queries[4].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
+		queries["insertEngineQuery"].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
+		queries["insertTransmissionQuery"].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
+		queries["insertBrandQuery"].Values(c.BrandName, c.BrandCreatorCountry)
+		queries["insertWheelQuery"].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
+		queries["insertCarQuery"].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
 	}
 
 	// Execute queries
