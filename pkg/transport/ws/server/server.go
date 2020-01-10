@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -26,18 +27,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	// Read data
 	// TODO: Set close handler
-	for {
+	err = errors.New("empty")
+	for err != nil {
 		var newCar pb.Car
-		if err := c.ReadJSON(&newCar); err != nil {
-			log.Error().Err(err).Msg("Failed to read msg")
-			break
-		}
+		err = c.ReadJSON(&newCar)
 		cars = append(cars, newCar)
 	}
 
 	// Send data in DB
 	if err = postgresdriver.SaveCars(cars); err != nil {
 		log.Error().Err(err).Msg("Could not send cars to DB")
+		return
 	}
 	log.Info().Msgf("Cars %v was saved via WS", cars)
 }
