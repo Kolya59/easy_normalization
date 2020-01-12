@@ -12,7 +12,7 @@ import (
 
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
 	grpcserver "github.com/kolya59/easy_normalization/pkg/transport/grpc/server"
-	mqttserver "github.com/kolya59/easy_normalization/pkg/transport/mqtt/server"
+	rabbitmqserver "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/server"
 	restserver "github.com/kolya59/easy_normalization/pkg/transport/rest/server"
 	wsserver "github.com/kolya59/easy_normalization/pkg/transport/ws/server"
 )
@@ -83,8 +83,10 @@ func main() {
 	log.Info().Msg("Started REST server")
 	go wsserver.StartServer(opts.Host, opts.WSPort, done)
 	log.Info().Msg("Started WS server")
-	go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
-	log.Info().Msg("Started MQTT server")
+	// go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
+	// log.Info().Msg("Started MQTT server")
+	go rabbitmqserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
+	log.Info().Msg("Started RabbitMQ server")
 	go grpcserver.StartServer(opts.Host, opts.GRPCPort)
 	log.Info().Msg("Started GRPC server")
 

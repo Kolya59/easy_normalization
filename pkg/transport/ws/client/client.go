@@ -26,33 +26,16 @@ func SendCars(cars []pb.Car, host, port string) {
 	}
 	defer c.Close()
 
-	// TODO ????
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				log.Fatal().Err(err).Msg("Failed to read msg")
-			}
-			log.Info().Msgf("Recv: %s", message)
-		}
-	}()
-
 	for _, newCar := range cars {
 		select {
-		case <-done:
-			return
 		case <-interrupt:
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
-			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
+			if err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
 				log.Fatal().Err(err).Msg("Failed to write close msg")
 				return
 			}
 			select {
-			case <-done:
 			case <-time.After(time.Second):
 			}
 			return
@@ -61,5 +44,9 @@ func SendCars(cars []pb.Car, host, port string) {
 				log.Fatal().Err(err).Msg("Failed to write msg")
 			}
 		}
+	}
+	if err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
+		log.Fatal().Err(err).Msg("Failed to write close msg")
+		return
 	}
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -23,14 +22,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Close()
-	var cars []pb.Car
 
 	// Read data
-	// TODO: Set close handler
-	err = errors.New("empty")
-	for err != nil {
-		var newCar pb.Car
-		err = c.ReadJSON(&newCar)
+	var cars []pb.Car
+	var newCar pb.Car
+	for err = c.ReadJSON(&newCar); err == nil; err = c.ReadJSON(&newCar) {
 		cars = append(cars, newCar)
 	}
 
