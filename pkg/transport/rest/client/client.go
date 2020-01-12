@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -24,11 +23,9 @@ func SendCars(cars []pb.Car, host, port string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to send request")
 	}
-	if resp.StatusCode != http.StatusOK {
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal().Msgf("Response status is not OK: %v\nFailed to read body", resp.Status)
-		}
-		log.Fatal().Msgf("Response status is not OK: %v\nBody: %s", resp.Status, respBody)
+	if resp.StatusCode == http.StatusOK {
+		log.Info().Msgf("Response status is OK: %v", resp.Status)
+	} else {
+		log.Fatal().Msgf("Response status is not OK: %v", resp.Status)
 	}
 }

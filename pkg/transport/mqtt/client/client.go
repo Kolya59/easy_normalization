@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -13,13 +14,12 @@ import (
 
 func sendToBroker(uri *url.URL, topic string, cars []pb.Car) {
 	client := common.Connect("sub", uri)
-	for _, c := range cars {
-		data, err := json.Marshal(c)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to publish data")
-		}
-		client.Publish(topic, 0, false, data)
+	defer client.Disconnect(uint(10 * time.Second.Seconds()))
+	data, err := json.Marshal(cars)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to publish data")
 	}
+	client.Publish(topic, 0, false, data)
 }
 
 func SendCars(cars []pb.Car, brokerHost, brokerPort, user, password, topic string) {
@@ -28,7 +28,7 @@ func SendCars(cars []pb.Car, brokerHost, brokerPort, user, password, topic strin
 		log.Fatal().Err(err).Msg("Failed to parse uri")
 	}
 	if topic == "" {
-		topic = "time"
+		topic = "cars"
 	}
 
 	sendToBroker(uri, topic, cars)

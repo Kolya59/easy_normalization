@@ -10,10 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
 	mqttclient "github.com/kolya59/easy_normalization/pkg/transport/mqtt/client"
-	restclient "github.com/kolya59/easy_normalization/pkg/transport/rest/client"
-	wsclient "github.com/kolya59/easy_normalization/pkg/transport/ws/client"
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
@@ -195,8 +192,8 @@ func main() {
 	cars := fillData()
 
 	// Send data to server
-	restclient.SendCars(cars[:2], opts.Host, opts.RESTPort)
-	wsclient.SendCars(cars[1:3], opts.Host, opts.WSPort)
+	// restclient.SendCars(cars[:2], opts.Host, opts.RESTPort)
+	// wsclient.SendCars(cars[1:3], opts.Host, opts.WSPort)
 	mqttclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
-	grpcclient.SendCars(cars[3:], opts.Host, opts.GRPCPort)
+	// grpcclient.SendCars(cars[3:], opts.Host, opts.GRPCPort)
 }
