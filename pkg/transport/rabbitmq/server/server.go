@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	RabbitMQUrl = "amqp://%s:%s@%s:%s/%s"
+	RabbitMQUrl = "amqp://%s:%s@%s:%s"
 )
 
 func handleConnection(msg amqp.Delivery) {
@@ -33,7 +33,7 @@ func StartServer(brokerHost, brokerPort, user, password, topic string, done chan
 	if topic == "" {
 		topic = "cars"
 	}
-	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, password, brokerHost, brokerPort, user))
+	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, user, brokerHost, brokerPort))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to connect to RabbitMQ broker")
 	}
