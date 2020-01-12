@@ -130,6 +130,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:5ca236e4ecfeb92a57b7a4c7f139023384e7f726640f61b17820473cc82dfb77"
+  name = "github.com/streadway/amqp"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1c71cc93ed716f9a6f4c2ae8955c25f9176d9f19"
+
+[[projects]]
+  branch = "master"
   digest = "1:7d1802417c28b1cfaa8cd335442344cd85cc7b981f12b73d57fbba6208e0da89"
   name = "golang.org/x/net"
   packages = [
@@ -246,6 +254,7 @@
     "github.com/lib/pq",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
+    "github.com/streadway/amqp",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/status",

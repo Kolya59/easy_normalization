@@ -22,22 +22,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Close()
-	var cars []pb.Car
 
 	// Read data
-	// TODO: Set close handler
-	for {
-		var newCar pb.Car
-		if err := c.ReadJSON(&newCar); err != nil {
-			log.Error().Err(err).Msg("Failed to read msg")
-			break
-		}
+	var cars []pb.Car
+	var newCar pb.Car
+	for err = c.ReadJSON(&newCar); err == nil; err = c.ReadJSON(&newCar) {
 		cars = append(cars, newCar)
 	}
 
 	// Send data in DB
 	if err = postgresdriver.SaveCars(cars); err != nil {
 		log.Error().Err(err).Msg("Could not send cars to DB")
+		return
 	}
 	log.Info().Msgf("Cars %v was saved via WS", cars)
 }

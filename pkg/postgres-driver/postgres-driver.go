@@ -63,31 +63,41 @@ func SaveCars(cars []pb.Car) error {
 	}
 
 	// Prepare queries
-	queries := make(map[string]sq.InsertBuilder)
-	queries["insertEngineQuery"] = sq.Insert("engines").
-		Columns("engine_model", "engine_power", "engine_volume", "engine_type")
-	queries["insertTransmissionQuery"] = sq.Insert("transmissions").
-		Columns("transmission_model", "transmission_type", "transmission_gears_number")
-	queries["insertBrandQuery"] = sq.Insert("brands").
-		Columns("brand_name", "brand_creator_country")
-	queries["insertWheelQuery"] = sq.Insert("wheels").
-		Columns("wheel_radius", "wheel_color", "wheel_model")
-	queries["insertCarQuery"] = sq.Insert("cars").
-		Columns("model", "engine", "transmission", "brand", "wheel", "price")
+	queries := make([]sq.InsertBuilder, 5)
+	queries[0] = sq.Insert("engines").
+		Columns("engine_model", "engine_power", "engine_volume", "engine_type").
+		Suffix("ON CONFLICT (engine_model) DO NOTHING")
+	queries[1] = sq.Insert("transmissions").
+		Columns("transmission_model", "transmission_type", "transmission_gears_number").
+		Suffix("ON CONFLICT (transmission_model) DO NOTHING")
+	queries[2] = sq.Insert("brands").
+		Columns("brand_name", "brand_creator_country").
+		Suffix("ON CONFLICT (brand_name) DO NOTHING")
+	queries[3] = sq.Insert("wheels").
+		Columns("wheel_model", "wheel_radius", "wheel_color").
+		Suffix("ON CONFLICT (wheel_model) DO NOTHING")
+	queries[4] = sq.Insert("cars").
+		Columns("model", "engine", "transmission", "brand", "wheel", "price").
+		Suffix("ON CONFLICT (model) DO NOTHING")
 
 	// Bind arguments to queries
 	for _, c := range cars {
-		queries["insertEngineQuery"] = queries["insertEngineQuery"].Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
-		queries["insertTransmissionQuery"] = queries["insertTransmissionQuery"].Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
-		queries["insertBrandQuery"] = queries["insertBrandQuery"].Values(c.BrandName, c.BrandCreatorCountry)
-		queries["insertWheelQuery"] = queries["insertWheelQuery"].Values(c.WheelModel, c.WheelRadius, c.WheelColor)
-		queries["insertCarQuery"] = queries["insertCarQuery"].Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
+		queries[0] = queries[0].
+			Values(c.EngineModel, c.EnginePower, c.EngineVolume, c.EngineType)
+		queries[1] = queries[1].
+			Values(c.TransmissionModel, c.TransmissionType, c.TransmissionGearsNumber)
+		queries[2] = queries[2].
+			Values(c.BrandName, c.BrandCreatorCountry)
+		queries[3] = queries[3].
+			Values(c.WheelModel, c.WheelRadius, c.WheelColor)
+		queries[4] = queries[4].
+			Values(c.Model, c.EngineModel, c.TransmissionModel, c.BrandName, c.WheelModel, c.Price)
 	}
 
 	// Execute queries
 	for _, query := range queries {
-		query = query.Suffix("ON CONFLICT DO NOTHING")
-		if _, err = query.RunWith(tx).Exec(); err != nil {
+		q, a, err := query.PlaceholderFormat(sq.Dollar).ToSql()
+		if _, err = tx.Exec(q, a...); err != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
 				log.Error().Err(rbErr).Msg("Failed to rollback transaction")
 			}
