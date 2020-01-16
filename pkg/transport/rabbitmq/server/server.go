@@ -18,7 +18,7 @@ const (
 func handleConnection(msg amqp.Delivery) {
 	// Get data
 	var cars []pb.Car
-	if err := json.Unmarshal(msg.Body, cars); err != nil {
+	if err := json.Unmarshal(msg.Body, &cars); err != nil {
 		log.Fatal().Err(err).Msg("Failed to unmarshal cars")
 	}
 	// Send data in DB
@@ -33,7 +33,7 @@ func StartServer(brokerHost, brokerPort, user, password, topic string, done chan
 	if topic == "" {
 		topic = "cars"
 	}
-	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, user, brokerHost, brokerPort))
+	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, password, brokerHost, brokerPort))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to connect to RabbitMQ broker")
 	}
@@ -44,17 +44,21 @@ func StartServer(brokerHost, brokerPort, user, password, topic string, done chan
 		log.Error().Err(err).Msg("Failed to get channel")
 	}
 
-	if _, err = channel.QueueDeclare("cars", true, false, false, false, nil); err != nil {
+	if err := channel.ExchangeDeclare(topic, "fanout", true, false, false, false, nil); err != nil {
+		log.Fatal().Err(err).Msg("Failed to declare exchange channel")
+	}
+
+	if _, err = channel.QueueDeclare("", true, false, false, false, nil); err != nil {
 		log.Error().Err(err).Msg("Failed to declare the queue")
 	}
 
-	if err = channel.QueueBind("cars", "#", topic, false, nil); err != nil {
-		panic("error binding to the queue: " + err.Error())
+	if err = channel.QueueBind("", "#", topic, false, nil); err != nil {
+		log.Error().Err(err).Msg("Failed to binding to the queue")
 	}
 
-	msgs, err := channel.Consume("cars", "", false, false, false, false, nil)
+	msgs, err := channel.Consume("", "", false, false, false, false, nil)
 	if err != nil {
-		panic("error consuming the queue: " + err.Error())
+		log.Error().Err(err).Msg("Failed to consuming the queue")
 	}
 
 loop:

@@ -10,9 +10,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	rabbitmqclient "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/client"
 	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
-	mqttclient "github.com/kolya59/easy_normalization/pkg/transport/mqtt/client"
+	rabbitmqclient "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/client"
 	restclient "github.com/kolya59/easy_normalization/pkg/transport/rest/client"
 	wsclient "github.com/kolya59/easy_normalization/pkg/transport/ws/client"
 	pb "github.com/kolya59/easy_normalization/proto"

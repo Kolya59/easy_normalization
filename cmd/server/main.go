@@ -12,6 +12,7 @@ import (
 
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
 	grpcserver "github.com/kolya59/easy_normalization/pkg/transport/grpc/server"
+	"github.com/kolya59/easy_normalization/pkg/transport/proxy"
 	rabbitmqserver "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/server"
 	restserver "github.com/kolya59/easy_normalization/pkg/transport/rest/server"
 	wsserver "github.com/kolya59/easy_normalization/pkg/transport/ws/server"
@@ -79,6 +80,8 @@ func main() {
 	done := make(chan interface{})
 
 	// Start servers
+	go proxy.StartServer()
+	log.Info().Msg("Started Proxy server")
 	go restserver.StartServer(opts.Host, opts.RESTPort, done)
 	log.Info().Msg("Started REST server")
 	go wsserver.StartServer(opts.Host, opts.WSPort, done)
