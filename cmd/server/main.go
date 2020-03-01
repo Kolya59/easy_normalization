@@ -75,15 +75,15 @@ func main() {
 	// Start servers
 	go proxy.StartServer()
 	log.Info().Msg("Started Proxy server")
-	go restserver.StartServer(opts.Host, opts.RESTPort, done)
+	go restserver.StartServer("", opts.RESTPort, done)
 	log.Info().Msg("Started REST server")
-	go wsserver.StartServer(opts.Host, opts.WSPort, done)
+	go wsserver.StartServer("", opts.WSPort, done)
 	log.Info().Msg("Started WS server")
 	// go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
 	// log.Info().Msg("Started MQTT server")
-	go rabbitmqserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
+	go rabbitmqserver.StartServer(opts.CloudamqpUrl, opts.Topic, done)
 	log.Info().Msg("Started RabbitMQ server")
-	go grpcserver.StartServer(opts.Host, opts.GRPCPort)
+	go grpcserver.StartServer("", opts.GRPCPort)
 	log.Info().Msg("Started GRPC server")
 
 	// Wait interrupt signal
