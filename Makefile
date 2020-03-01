@@ -26,6 +26,15 @@ build-server-linux:
 build-client-linux:
 	GOOS=linux GOARCH=amd64 go build -o ./bin/linux/client.bin ./cmd/client/main.go
 
+build-arm: build-server-arm build-client-arm
+
+build-server-arm:
+	GOOS=linux GOARCH=arm64 go build -o ./bin/arm/server.bin ./cmd/server/main.go
+
+build-client-arm:
+	GOOS=linux GOARCH=arm64 go build -o ./bin/arm/client.bin ./cmd/client/main.go
+
+
 run: setup-env
 	./bin/server.app
 
