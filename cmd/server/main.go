@@ -1,10 +1,8 @@
-package main
+package server
 
 import (
 	_ "database/sql"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
@@ -29,7 +27,7 @@ var opts struct {
 	Topic           string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
-func main() {
+func Start(done chan interface{}) {
 	// Log initialization
 	zerolog.MessageFieldName = "MESSAGE"
 	zerolog.LevelFieldName = "LEVEL"
@@ -60,18 +58,6 @@ func main() {
 		}
 	}()
 
-	/*// Set DB structure?
-	log.Debug().Msg("Try to set database structure")
-	if err = postgresdriver.InitDatabaseStructure(); err != nil {
-		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
-	}*/
-
-	// Graceful shutdown
-	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, syscall.SIGTERM)
-	signal.Notify(sigint, syscall.SIGINT)
-	done := make(chan interface{})
-
 	// Start servers
 	go proxy.StartServer()
 	log.Info().Msg("Started Proxy server")
@@ -85,10 +71,4 @@ func main() {
 	log.Info().Msg("Started RabbitMQ server")
 	go grpcserver.StartServer("", opts.GRPCPort)
 	log.Info().Msg("Started GRPC server")
-
-	// Wait interrupt signal
-	select {
-	case <-sigint:
-		close(done)
-	}
 }

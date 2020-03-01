@@ -11,11 +11,12 @@ import (
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-func SendCars(cars []pb.Car, host, port string) {
+func SendCars(cars []pb.Car, host, port string) error {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", host, port), grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect")
+		log.Error().Err(err).Msg("Failed to connect")
+		return fmt.Errorf("failed to connect: %v", err)
 	}
 	defer conn.Close()
 	c := pb.NewCarSaverClient(conn)
@@ -31,7 +32,9 @@ func SendCars(cars []pb.Car, host, port string) {
 	defer cancel()
 	r, err := c.SaveCars(ctx, &pb.SaveRequest{Cars: convertedCars})
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to save cars")
+		log.Error().Err(err).Msg("Failed to save cars")
+		return fmt.Errorf("failed to save cars: %v", err)
 	}
 	log.Printf("Result: %s", r.GetMessage())
+	return nil
 }

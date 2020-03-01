@@ -1,11 +1,15 @@
-package main
+package client
 
 import (
+	"context"
 	_ "database/sql"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 
-	"github.com/go-redis/cache"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -18,43 +22,16 @@ import (
 )
 
 var opts struct {
-	Host       string `long:"host" env:"HOST" description:"Server host" required:"true"`
-	RESTPort   string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
-	WSPort     string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
-	GRPCPort   string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
-	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	BrokerHost string `long:"broker_host" env:"BROKER_HOST" description:"Host" required:"true"`
-	BrokerPort string `long:"broker_port" env:"BROKER_PORT" description:"Port" required:"true"`
-	User       string `long:"user" env:"USER" description:"Username" required:"true"`
-	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
-	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
+	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
+	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
+	Port            string `long:"rest_port" env:"PORT" description:"Server port" required:"true"`
+	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
+	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
+	Topic           string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
-// Send info to Redis database
-func SetCar(newCar *pb.Car, codec *cache.Codec, index string) error {
-	err := codec.Set(&cache.Item{
-		Ctx:        nil,
-		Key:        index,
-		Object:     newCar,
-		Func:       nil,
-		Expiration: time.Minute,
-	})
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Get info from Redis data base
-func GetCar(index string, codec *cache.Codec) (newCar *pb.Car, err error) {
-	newCar = &pb.Car{}
-	err = codec.Get(index, newCar)
-	if err != nil {
-		return nil, err
-	}
-	return newCar, nil
-}
+var defaultCars []pb.Car
 
 func fillData() []pb.Car {
 	return []pb.Car{
@@ -141,7 +118,98 @@ func fillData() []pb.Car {
 	}
 }
 
-func main() {
+func handler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("Client is ready"))
+		return
+	case http.MethodPost:
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, _ = w.Write([]byte("Failed to read data"))
+			return
+		}
+
+		var cars []pb.Car
+		if err = json.Unmarshal(data, &cars); err != nil {
+			log.Error().Err(err).Msg("Failed to decode body")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, _ = w.Write([]byte("Failed to decode body"))
+			return
+		}
+
+		t := r.Header.Get("Type")
+		switch t {
+		case "REST":
+			if err := restclient.SendCars(cars, "", opts.Port); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via REST")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via REST"))
+				return
+			}
+		case "WS":
+			if err := wsclient.SendCars(cars, "", opts.WSPort); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via WS")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via WS"))
+				return
+			}
+		case "AMPQ":
+			if err := rabbitmqclient.SendCars(cars, opts.CloudamqpUrl, opts.Topic); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via AMPQ")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via AMPQ"))
+				return
+			}
+		case "gRPC":
+			if err := grpcclient.SendCars(cars, "", opts.GRPCPort); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via gRPC")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
+				return
+			}
+		case "All":
+			if err := restclient.SendCars(defaultCars[:2], "", opts.Port); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via REST")
+				return
+			}
+			if err := wsclient.SendCars(defaultCars[1:3], "", opts.WSPort); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via WS")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via WS"))
+				return
+			}
+			if err := rabbitmqclient.SendCars(defaultCars[2:4], opts.CloudamqpUrl, opts.Topic); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via AMPQ")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via AMPQ"))
+				return
+			}
+			if err := grpcclient.SendCars(defaultCars[3:], "", opts.GRPCPort); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via gRPC")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
+				return
+			}
+		default:
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, _ = w.Write([]byte("Unrecognized header"))
+			return
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_, _ = w.Write([]byte("Method is not allowed"))
+		return
+	}
+
+	log.Info().Msg("Cars sent successfully")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Cars sent successfully"))
+}
+
+func Start(done chan interface{}) {
 	// Log initialization
 	zerolog.MessageFieldName = "MESSAGE"
 	zerolog.LevelFieldName = "LEVEL"
@@ -162,42 +230,27 @@ func main() {
 	}
 	zerolog.SetGlobalLevel(level)
 
-	// Redis initialization
-	/*servers := map[string]string{
-		"server1": "localhost:6379",
+	defaultCars = fillData()
+
+	r := http.NewServeMux()
+
+	r.HandleFunc("/", handler)
+
+	srv := http.Server{
+		Addr:         fmt.Sprintf(":%s", opts.Port),
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  15 * time.Second,
 	}
-	ring := redis.NewRing(&redis.RingOptions{
-		Addrs:    servers,
-		Password: "",
-		DB:       0,
-	})
-	defer func() {
-		err := ring.Close()
-		if err != nil {
-			log.Fatal().Msgf("Could not close ring: %v", err)
-		}
+
+	go func() {
+		ctx := context.Background()
+		<-done
+		srv.Shutdown(ctx)
 	}()
 
-	codec := &cache.Codec{
-		Redis:     ring,
-		Marshal:   msgpack.Marshal,
-		Unmarshal: msgpack.Unmarshal,
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal().Err(err).Msg("Failed to listen and serve")
 	}
-
-	// Set data in Redis
-	cars := fillData()
-	for i, obj := range cars {
-		err = SetCar(&obj, codec, string(i))
-		if err != nil {
-			log.Fatal().Msgf("Could not add car in Redis: %v", err)
-		}
-	}*/
-	cars := fillData()
-
-	// Send data to server
-	restclient.SendCars(cars[:2], opts.Host, opts.RESTPort)
-	wsclient.SendCars(cars[1:3], opts.Host, opts.WSPort)
-	// mqttclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
-	rabbitmqclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
-	grpcclient.SendCars(cars[3:], opts.Host, opts.GRPCPort)
 }

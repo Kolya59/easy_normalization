@@ -12,20 +12,24 @@ import (
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-func SendCars(cars []pb.Car, host, port string) {
+func SendCars(cars []pb.Car, host, port string) error {
 	// Send data to server
 	data, err := json.Marshal(cars)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to marshal data")
+		log.Error().Err(err).Msg("Failed to marshal data")
+		return fmt.Errorf("failed to marshal data: %v", err)
 	}
 	u := url.URL{Scheme: "http", Host: fmt.Sprintf("%s:%s", host, port), Path: "/"}
 	resp, err := http.Post(u.String(), "application/json", bytes.NewReader(data))
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to send request")
+		log.Error().Err(err).Msg("Failed to send request")
+		return fmt.Errorf("failed to send request: %v", err)
 	}
 	if resp.StatusCode == http.StatusOK {
 		log.Info().Msgf("Response status is OK: %v", resp.Status)
+		return nil
 	} else {
-		log.Fatal().Msgf("Response status is not OK: %v", resp.Status)
+		log.Error().Msgf("Response status is not OK: %v", resp.Status)
+		return fmt.Errorf("response status is not OK: %v", resp.Status)
 	}
 }
