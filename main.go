@@ -67,12 +67,6 @@ func main() {
 		}
 	}()
 
-	/*// Set DB structure?
-	log.Debug().Msg("Try to set database structure")
-	if err = postgresdriver.InitDatabaseStructure(); err != nil {
-		log.Fatal().Msgf("Could not init Postgres structure: %v", err)
-	}*/
-
 	// Graceful shutdown
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, syscall.SIGTERM)
@@ -86,8 +80,6 @@ func main() {
 	log.Info().Msg("Started REST server")
 	go wsserver.StartServer(opts.Host, opts.WSPort, done)
 	log.Info().Msg("Started WS server")
-	// go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
-	// log.Info().Msg("Started MQTT server")
 	go rabbitmqserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
 	log.Info().Msg("Started RabbitMQ server")
 	go grpcserver.StartServer(opts.Host, opts.GRPCPort)

@@ -42,6 +42,11 @@ func postCar(w http.ResponseWriter, r *http.Request) {
 func StartServer(host, port string, done chan interface{}) {
 	// Set rest server
 	r := chi.NewRouter()
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Yesss"))
+		w.WriteHeader(200)
+	})
+
 	r.Post("/", postCar)
 
 	srv := http.Server{
