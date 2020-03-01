@@ -19,21 +19,14 @@ import (
 )
 
 var opts struct {
-	Host       string `long:"host" env:"HOST" description:"Server host" required:"true"`
-	RESTPort   string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
-	WSPort     string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
-	GRPCPort   string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
-	DbHost     string `long:"database_host" env:"DB_HOST" description:"Database host" required:"true"`
-	DbPort     string `long:"database_port" env:"DB_PORT" description:"Database port" required:"true"`
-	DbName     string `long:"database_name" env:"DB_NAME" description:"Database name" required:"true"`
-	DbUser     string `long:"database_username" env:"DB_USER" description:"Database username" required:"true"`
-	DbPassword string `long:"database_password" env:"DB_PASSWORD" description:"Database password" required:"true"`
-	LogLevel   string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	BrokerHost string `long:"broker_host" env:"BROKER_HOST" description:"Host" required:"true"`
-	BrokerPort string `long:"broker_port" env:"BROKER_PORT" description:"Port" required:"true"`
-	User       string `long:"user" env:"USER" description:"Username" required:"true"`
-	Password   string `long:"password" env:"PASS" description:"Password" required:"true"`
-	Topic      string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
+	DBURL           string `long:"db_url" env:"DATABASE_URL" description:"DB URL" required:"true"`
+	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
+	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
+	RESTPort        string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
+	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
+	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
+	Topic           string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
 func main() {
@@ -58,7 +51,7 @@ func main() {
 
 	// Connect to database
 	log.Debug().Msg("Try to connect to database")
-	if err = postgresdriver.InitDatabaseConnection(opts.DbHost, opts.DbPort, opts.DbUser, opts.DbPassword, opts.DbName); err != nil {
+	if err = postgresdriver.InitDatabaseConnection(opts.DBURL); err != nil {
 		log.Fatal().Msgf("Failed to connect to database: %v", err)
 	}
 	defer func() {
