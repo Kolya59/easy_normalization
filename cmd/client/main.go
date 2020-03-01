@@ -24,7 +24,7 @@ import (
 var opts struct {
 	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
 	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
-	Port            string `long:"rest_port" env:"PORT" description:"Server port" required:"true"`
+	Port            string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
 	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
 	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
 	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
