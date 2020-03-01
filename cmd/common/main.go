@@ -5,7 +5,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kolya59/easy_normalization/cmd/client"
 	"github.com/kolya59/easy_normalization/cmd/server"
 )
 
@@ -17,12 +16,10 @@ func main() {
 	done := make(chan interface{})
 
 	go server.Start(done)
-	go client.Start(done)
 
 	// Wait interrupt signal
 	select {
 	case <-sigint:
 		close(done)
 	}
-
 }

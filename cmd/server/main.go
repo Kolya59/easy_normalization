@@ -65,8 +65,6 @@ func Start(done chan interface{}) {
 	log.Info().Msg("Started REST server")
 	go wsserver.StartServer("", opts.WSPort, done)
 	log.Info().Msg("Started WS server")
-	// go mqttserver.StartServer(opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic, done)
-	// log.Info().Msg("Started MQTT server")
 	go rabbitmqserver.StartServer(opts.CloudamqpUrl, opts.Topic, done)
 	log.Info().Msg("Started RabbitMQ server")
 	go grpcserver.StartServer("", opts.GRPCPort)

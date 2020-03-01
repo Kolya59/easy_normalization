@@ -24,7 +24,9 @@ import (
 var opts struct {
 	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
 	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
-	Port            string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
+	Host            string `long:"host" env:"HOST"`
+	Port            string `long:"port" env:"PORT" description:"Server port" required:"true"`
+	RESTPort        string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
 	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
 	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
 	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
@@ -143,14 +145,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		t := r.Header.Get("Type")
 		switch t {
 		case "REST":
-			if err := restclient.SendCars(cars, "", opts.Port); err != nil {
+			if err := restclient.SendCars(cars, opts.Host, opts.RESTPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via REST")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via REST"))
 				return
 			}
 		case "WS":
-			if err := wsclient.SendCars(cars, "", opts.WSPort); err != nil {
+			if err := wsclient.SendCars(cars, opts.Host, opts.WSPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via WS")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via WS"))
@@ -164,18 +166,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "gRPC":
-			if err := grpcclient.SendCars(cars, "", opts.GRPCPort); err != nil {
+			if err := grpcclient.SendCars(cars, opts.Host, opts.GRPCPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via gRPC")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
 				return
 			}
 		case "All":
-			if err := restclient.SendCars(defaultCars[:2], "", opts.Port); err != nil {
+			if err := restclient.SendCars(defaultCars[:2], opts.Host, opts.RESTPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via REST")
 				return
 			}
-			if err := wsclient.SendCars(defaultCars[1:3], "", opts.WSPort); err != nil {
+			if err := wsclient.SendCars(defaultCars[1:3], opts.Host, opts.WSPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via WS")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via WS"))
@@ -187,7 +189,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte("Failed to send cars via AMPQ"))
 				return
 			}
-			if err := grpcclient.SendCars(defaultCars[3:], "", opts.GRPCPort); err != nil {
+			if err := grpcclient.SendCars(defaultCars[3:], opts.Host, opts.GRPCPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via gRPC")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
@@ -247,7 +249,7 @@ func Start(done chan interface{}) {
 	go func() {
 		ctx := context.Background()
 		<-done
-		srv.Shutdown(ctx)
+		_ = srv.Shutdown(ctx)
 	}()
 
 	if err := srv.ListenAndServe(); err != nil {
