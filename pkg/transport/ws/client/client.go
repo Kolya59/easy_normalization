@@ -51,4 +51,6 @@ func SendCars(cars []pb.Car, host, port string) error {
 		log.Error().Err(err).Msg("Failed to write close msg")
 		return fmt.Errorf("failed to write close msg: %v", err)
 	}
+
+	return nil
 }

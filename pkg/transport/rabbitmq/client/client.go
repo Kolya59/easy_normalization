@@ -43,4 +43,5 @@ func SendCars(cars []pb.Car, url, topic string) error {
 		log.Error().Err(err).Msg("Failed to publish data")
 		return fmt.Errorf("failed to publish data: %v", err)
 	}
+	return nil
 }
