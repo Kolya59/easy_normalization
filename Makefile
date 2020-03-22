@@ -1,4 +1,4 @@
-all: build run
+all: build-all run
 
 build-all: build-mac build-win build-linux
 
@@ -34,9 +34,21 @@ build-server-arm:
 build-client-arm:
 	GOOS=linux GOARCH=arm64 go build -o ./bin/arm/client.bin ./cmd/client/main.go
 
+run-server-linux: setup-env
+	./bin/server.bin
 
-run: setup-env
-	./bin/server.app
+run-client-linux: setup-env
+	./bin/client.bin
+
+# DOCKER
+docker-build-server:
+	docker build --tag=en-server -f ./docker/server.Dockerfile .
+
+docker-build-client:
+	docker build --tag=en-server -f ./docker/server.Dockerfile .
+
+docker-push-server:
+	docker push
 
 proto:
 	protoc -I ./proto/ ./proto/Cars.proto --go_out=plugins=grpc:proto

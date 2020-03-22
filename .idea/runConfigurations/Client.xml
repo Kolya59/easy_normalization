@@ -16,7 +16,7 @@
     </EXTENSION>
     <kind value="PACKAGE" />
     <filePath value="$PROJECT_DIR$/cmd/client/main.go" />
-    <package value="github.com/kolya59/easy_normalization/cmd/client" />
+    <package value="github.com/kolya59/easy-normalization-client/" />
     <directory value="$PROJECT_DIR$/" />
     <method v="2" />
   </configuration>
