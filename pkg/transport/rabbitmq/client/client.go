@@ -10,36 +10,38 @@ import (
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-const (
-	RabbitMQUrl = "amqp://%s:%s@%s:%s"
-)
-
-func SendCars(cars []pb.Car, brokerHost, brokerPort, user, password, topic string) {
+func SendCars(cars []pb.Car, url, topic string) error {
 	if topic == "" {
 		topic = "cars"
 	}
-	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, user, brokerHost, brokerPort))
+	connection, err := amqp.Dial(url)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to RabbitMQ broker")
+		log.Error().Err(err).Msg("Failed to connect to RabbitMQ broker")
+		return fmt.Errorf("failed to connect to RabbitMQ broker: %v", err)
 	}
 	defer connection.Close()
 
 	channel, err := connection.Channel()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to get channel")
+		log.Error().Err(err).Msg("Failed to get channel")
+		return fmt.Errorf("failed to get channel: %v", err)
 	}
 
 	if err := channel.ExchangeDeclare(topic, "topic", true, false, false, false, nil); err != nil {
-		log.Fatal().Err(err).Msg("Failed to declare exchange channel")
+		log.Error().Err(err).Msg("Failed to declare exchange channel")
+		return fmt.Errorf("failed to declare exchange channel: %v", err)
 	}
 
 	data, err := json.Marshal(cars)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to publish data")
+		log.Error().Err(err).Msg("Failed to publish data")
+		return fmt.Errorf("failed to publish data: %v", err)
 	}
 	msg := amqp.Publishing{Body: data}
 
 	if err := channel.Publish(topic, "random-key", false, false, msg); err != nil {
-		log.Fatal().Err(err).Msg("Failed to publish data")
+		log.Error().Err(err).Msg("Failed to publish data")
+		return fmt.Errorf("failed to publish data: %v", err)
 	}
+	return nil
 }

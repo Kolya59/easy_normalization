@@ -16,10 +16,9 @@ import (
 var db *sql.DB
 
 // Init database
-func InitDatabaseConnection(host string, port string, user string, password string, name string) (err error) {
+func InitDatabaseConnection(dbUrl string) (err error) {
 	// Open connection
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, name)
-	db, err = sql.Open("postgres", connStr)
+	db, err = sql.Open("postgres", dbUrl)
 	if err != nil {
 		return fmt.Errorf("could not open database connection: %v", err)
 	}

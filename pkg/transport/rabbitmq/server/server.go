@@ -2,17 +2,12 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
 	pb "github.com/kolya59/easy_normalization/proto"
-)
-
-const (
-	RabbitMQUrl = "amqp://%s:%s@%s:%s"
 )
 
 func handleConnection(msg amqp.Delivery) {
@@ -29,11 +24,11 @@ func handleConnection(msg amqp.Delivery) {
 	msg.Ack(false)
 }
 
-func StartServer(brokerHost, brokerPort, user, password, topic string, done chan interface{}) {
+func StartServer(url, topic string, done chan interface{}) {
 	if topic == "" {
 		topic = "cars"
 	}
-	connection, err := amqp.Dial(fmt.Sprintf(RabbitMQUrl, user, password, brokerHost, brokerPort))
+	connection, err := amqp.Dial(url)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to connect to RabbitMQ broker")
 	}

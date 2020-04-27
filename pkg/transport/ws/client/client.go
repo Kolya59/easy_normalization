@@ -13,7 +13,7 @@ import (
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
-func SendCars(cars []pb.Car, host, port string) {
+func SendCars(cars []pb.Car, host, port string) error {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -22,7 +22,8 @@ func SendCars(cars []pb.Car, host, port string) {
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to dial")
+		log.Error().Err(err).Msg("Failed to dial")
+		return fmt.Errorf("failed to dial: %v", err)
 	}
 	defer c.Close()
 
@@ -32,21 +33,24 @@ func SendCars(cars []pb.Car, host, port string) {
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
 			if err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
-				log.Fatal().Err(err).Msg("Failed to write close msg")
-				return
+				log.Error().Err(err).Msg("Failed to write close msg")
+				return fmt.Errorf("failed to write close msg: %v", err)
 			}
 			select {
 			case <-time.After(time.Second):
 			}
-			return
+			return nil
 		default:
 			if err = c.WriteJSON(newCar); err != nil {
-				log.Fatal().Err(err).Msg("Failed to write msg")
+				log.Error().Err(err).Msg("Failed to write msg")
+				return fmt.Errorf("failed to write msg: %v", err)
 			}
 		}
 	}
 	if err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")); err != nil {
-		log.Fatal().Err(err).Msg("Failed to write close msg")
-		return
+		log.Error().Err(err).Msg("Failed to write close msg")
+		return fmt.Errorf("failed to write close msg: %v", err)
 	}
+
+	return nil
 }
