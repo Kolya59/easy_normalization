@@ -2,13 +2,16 @@ package main
 
 import (
 	_ "database/sql"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/go-redis/cache"
+	"github.com/go-redis/redis"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/vmihailenco/msgpack"
 
 	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
 	rabbitmqclient "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/client"
@@ -57,7 +60,23 @@ func GetCar(index string, codec *cache.Codec) (newCar *pb.Car, err error) {
 }
 
 func fillData() []pb.Car {
-	return []pb.Car{
+	ring := redis.NewRing(&redis.RingOptions{
+		Addrs: map[string]string{
+			"server1": ":6379",
+		},
+	})
+
+	codec := &cache.Codec{
+		Redis: ring,
+		Marshal: func(v interface{}) ([]byte, error) {
+			return msgpack.Marshal(v)
+		},
+		Unmarshal: func(b []byte, v interface{}) error {
+			return msgpack.Unmarshal(b, v)
+		},
+	}
+
+	cars := []pb.Car{
 		{
 			Model:                   "2114",
 			BrandName:               "LADA",
@@ -139,6 +158,22 @@ func fillData() []pb.Car {
 			Price:                   3000000,
 		},
 	}
+	for i, car := range cars {
+		if err := SetCar(&car, codec, fmt.Sprintf("%v", i)); err != nil {
+			log.Fatal().Err(err).Msg("Failed to set car")
+		}
+	}
+
+	res := make([]pb.Car, len(cars))
+	for i := 0; i < len(cars); i++ {
+		car, err := GetCar(fmt.Sprintf("%v", i), codec)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to get car")
+		}
+		res[i] = *car
+	}
+
+	return res
 }
 
 func main() {
@@ -162,42 +197,11 @@ func main() {
 	}
 	zerolog.SetGlobalLevel(level)
 
-	// Redis initialization
-	/*servers := map[string]string{
-		"server1": "localhost:6379",
-	}
-	ring := redis.NewRing(&redis.RingOptions{
-		Addrs:    servers,
-		Password: "",
-		DB:       0,
-	})
-	defer func() {
-		err := ring.Close()
-		if err != nil {
-			log.Fatal().Msgf("Could not close ring: %v", err)
-		}
-	}()
-
-	codec := &cache.Codec{
-		Redis:     ring,
-		Marshal:   msgpack.Marshal,
-		Unmarshal: msgpack.Unmarshal,
-	}
-
-	// Set data in Redis
-	cars := fillData()
-	for i, obj := range cars {
-		err = SetCar(&obj, codec, string(i))
-		if err != nil {
-			log.Fatal().Msgf("Could not add car in Redis: %v", err)
-		}
-	}*/
 	cars := fillData()
 
 	// Send data to server
 	restclient.SendCars(cars[:2], opts.Host, opts.RESTPort)
 	wsclient.SendCars(cars[1:3], opts.Host, opts.WSPort)
-	// mqttclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
 	rabbitmqclient.SendCars(cars[2:4], opts.BrokerHost, opts.BrokerPort, opts.User, opts.Password, opts.Topic)
 	grpcclient.SendCars(cars[3:], opts.Host, opts.GRPCPort)
 }

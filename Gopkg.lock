@@ -137,10 +137,34 @@
   revision = "1c71cc93ed716f9a6f4c2ae8955c25f9176d9f19"
 
 [[projects]]
+  digest = "1:bdbeee77ecd82dc2e9bdc6deab3739fb968d953f8660b5577c74585a119db40c"
+  name = "github.com/vmihailenco/msgpack"
+  packages = [
+    ".",
+    "codes",
+  ]
+  pruneopts = "UT"
+  revision = "cd92a145e6d2ce09e792f838dc0b669b680aea29"
+  version = "v4.1.1"
+
+[[projects]]
+  digest = "1:a6c5ab44d09b463220e70b89e20e55e182ba4f7d15144697fe8dfc449d553e73"
+  name = "github.com/vmihailenco/tagparser"
+  packages = [
+    ".",
+    "internal",
+    "internal/parser",
+  ]
+  pruneopts = "UT"
+  revision = "e4b6c8cf4f3d7bb572551d5a531a9f2068b2fd6e"
+  version = "v0.1.1"
+
+[[projects]]
   branch = "master"
-  digest = "1:7d1802417c28b1cfaa8cd335442344cd85cc7b981f12b73d57fbba6208e0da89"
+  digest = "1:7449fd8a8b1a8bd9c8eb9d915dcb9401a34eb76d7a97004c3cc8e12d08861098"
   name = "golang.org/x/net"
   packages = [
+    "context",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -186,6 +210,26 @@
   pruneopts = "UT"
   revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
   version = "v0.3.2"
+
+[[projects]]
+  digest = "1:c800028be312a304cd6e6d4952cd8ec83601176851ad10b8619912faa79eb7a7"
+  name = "google.golang.org/appengine"
+  packages = [
+    ".",
+    "datastore",
+    "datastore/internal/cloudkey",
+    "datastore/internal/cloudpb",
+    "internal",
+    "internal/app_identity",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/modules",
+    "internal/remote_api",
+  ]
+  pruneopts = "UT"
+  revision = "553959209a20f3be281c16dd5be5c740a893978f"
+  version = "v1.6.6"
 
 [[projects]]
   branch = "master"
@@ -248,6 +292,7 @@
     "github.com/eclipse/paho.mqtt.golang",
     "github.com/go-chi/chi",
     "github.com/go-redis/cache",
+    "github.com/go-redis/redis",
     "github.com/golang/protobuf/proto",
     "github.com/gorilla/websocket",
     "github.com/jessevdk/go-flags",
@@ -255,6 +300,7 @@
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
     "github.com/streadway/amqp",
+    "github.com/vmihailenco/msgpack",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/status",

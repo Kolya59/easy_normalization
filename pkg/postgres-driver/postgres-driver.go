@@ -97,6 +97,10 @@ func SaveCars(cars []pb.Car) error {
 	// Execute queries
 	for _, query := range queries {
 		q, a, err := query.PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to change placeholder")
+			return err
+		}
 		if _, err = tx.Exec(q, a...); err != nil {
 			if rbErr := tx.Rollback(); rbErr != nil {
 				log.Error().Err(rbErr).Msg("Failed to rollback transaction")
