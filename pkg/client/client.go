@@ -15,25 +15,27 @@ import (
 	"github.com/rs/zerolog/log"
 
 	grpcclient "github.com/kolya59/easy_normalization/pkg/transport/grpc/client"
-	rabbitmqclient "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/client"
+	pubsubclient "github.com/kolya59/easy_normalization/pkg/transport/mq/client"
 	restclient "github.com/kolya59/easy_normalization/pkg/transport/rest/client"
 	wsclient "github.com/kolya59/easy_normalization/pkg/transport/ws/client"
 	pb "github.com/kolya59/easy_normalization/proto"
 )
 
 var opts struct {
-	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
-	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
-	Host            string `long:"host" env:"HOST"`
-	Port            string `long:"port" env:"PORT" description:"Server port" required:"true"`
-	RESTPort        string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
-	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
-	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
-	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	Topic           string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
+	Server    string `long:"server" env:"SERVER" required:"true"`
+	Port      string `long:"port" env:"PORT" description:"Server port" required:"true"`
+	ProjectID string `long:"projectID" env:"PROJECT_ID" required:"true" default:"trrp-virus"`
+	RESTPort  string `long:"rest_port" env:"REST_PORT" description:"Server port" required:"true"`
+	WSPort    string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	GRPCPort  string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
+	LogLevel  string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
+	Topic     string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
 }
 
-var defaultCars []pb.Car
+var (
+	defaultCars []pb.Car
+	client      *pubsubclient.Client
+)
 
 func fillData() []pb.Car {
 	return []pb.Car{
@@ -145,51 +147,51 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		t := r.Header.Get("Type")
 		switch t {
 		case "REST":
-			if err := restclient.SendCars(cars, opts.Host, opts.RESTPort); err != nil {
+			if err := restclient.SendCars(cars, opts.Server, opts.RESTPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via REST")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via REST"))
 				return
 			}
 		case "WS":
-			if err := wsclient.SendCars(cars, opts.Host, opts.WSPort); err != nil {
+			if err := wsclient.SendCars(cars, opts.Server, opts.WSPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via WS")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via WS"))
 				return
 			}
-		case "AMPQ":
-			if err := rabbitmqclient.SendCars(cars, opts.CloudamqpUrl, opts.Topic); err != nil {
-				log.Error().Err(err).Msg("Failed to send cars via AMPQ")
+		case "MQ":
+			if err := client.SendCars(cars); err != nil {
+				log.Error().Err(err).Msg("Failed to send cars via MQ")
 				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte("Failed to send cars via AMPQ"))
+				_, _ = w.Write([]byte("Failed to send cars via MQ"))
 				return
 			}
 		case "gRPC":
-			if err := grpcclient.SendCars(cars, opts.Host, opts.GRPCPort); err != nil {
+			if err := grpcclient.SendCars(cars, opts.Server, opts.GRPCPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via gRPC")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
 				return
 			}
 		case "All":
-			if err := restclient.SendCars(defaultCars[:2], opts.Host, opts.RESTPort); err != nil {
+			if err := restclient.SendCars(defaultCars[:2], opts.Server, opts.RESTPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via REST")
 				return
 			}
-			if err := wsclient.SendCars(defaultCars[1:3], opts.Host, opts.WSPort); err != nil {
+			if err := wsclient.SendCars(defaultCars[1:3], opts.Server, opts.WSPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via WS")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via WS"))
 				return
 			}
-			if err := rabbitmqclient.SendCars(defaultCars[2:4], opts.CloudamqpUrl, opts.Topic); err != nil {
+			if err := client.SendCars(defaultCars[2:4]); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via AMPQ")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via AMPQ"))
 				return
 			}
-			if err := grpcclient.SendCars(defaultCars[3:], opts.Host, opts.GRPCPort); err != nil {
+			if err := grpcclient.SendCars(defaultCars[3:], opts.Server, opts.GRPCPort); err != nil {
 				log.Error().Err(err).Msg("Failed to send cars via gRPC")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("Failed to send cars via gRPC"))
@@ -223,7 +225,7 @@ func Start(done chan interface{}) {
 	// Parse flags
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
-		log.Panic().Msgf("Could not parse flags: %v", err)
+		log.Fatal().Err(err).Msg("Could not parse flags")
 	}
 
 	level, err := zerolog.ParseLevel(opts.LogLevel)
@@ -233,6 +235,10 @@ func Start(done chan interface{}) {
 	zerolog.SetGlobalLevel(level)
 
 	defaultCars = fillData()
+
+	if client, err = pubsubclient.NewClient(opts.ProjectID, opts.Topic); err != nil {
+		log.Fatal().Err(err).Msg("Failed to create new client")
+	}
 
 	r := http.NewServeMux()
 

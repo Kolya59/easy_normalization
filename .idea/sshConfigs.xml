@@ -2,7 +2,7 @@
 <project version="4">
   <component name="SshConfigs">
     <configs>
-      <sshConfig authType="PASSWORD" host="35.204.225.23" id="34c6c74e-11e2-4844-b310-f074eb77b2ca" port="22" customName="gcloud (project level)" nameFormat="CUSTOM" username="kolya59" />
+      <sshConfig authType="PASSWORD" host="192.168.0.174" id="1ff527e4-4178-4d8b-af26-37a062f40399" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" />
     </configs>
   </component>
 </project>

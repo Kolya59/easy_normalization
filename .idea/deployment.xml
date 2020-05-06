@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="gcloud" deleteMissingItems="true" createEmptyFolders="true">
+  <component name="PublishConfigData" deleteMissingItems="true" createEmptyFolders="true">
     <serverData>
-      <paths name="gcloud">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/kolya59/server" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
       <paths name="gcloud (project level)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/kolya59/server" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/go/src/github.com/kolya59/easy_normalization" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

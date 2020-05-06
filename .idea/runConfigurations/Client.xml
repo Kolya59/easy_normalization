@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Client" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false">
+  <configuration default="false" name="Client" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="true">
     <module name="easy_normalization" />
     <working_directory value="$PROJECT_DIR$/" />
     <go_parameters value="-i" />
@@ -16,7 +16,7 @@
     </EXTENSION>
     <kind value="PACKAGE" />
     <filePath value="$PROJECT_DIR$/cmd/client/main.go" />
-    <package value="github.com/kolya59/easy-normalization-client/" />
+    <package value="github.com/kolya59/easy_normalization/cmd/client" />
     <directory value="$PROJECT_DIR$/" />
     <method v="2" />
   </configuration>

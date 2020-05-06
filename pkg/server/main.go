@@ -10,21 +10,20 @@ import (
 
 	postgresdriver "github.com/kolya59/easy_normalization/pkg/postgres-driver"
 	grpcserver "github.com/kolya59/easy_normalization/pkg/transport/grpc/server"
-	"github.com/kolya59/easy_normalization/pkg/transport/proxy"
-	rabbitmqserver "github.com/kolya59/easy_normalization/pkg/transport/rabbitmq/server"
+	pubsubserver "github.com/kolya59/easy_normalization/pkg/transport/mq/server"
 	restserver "github.com/kolya59/easy_normalization/pkg/transport/rest/server"
 	wsserver "github.com/kolya59/easy_normalization/pkg/transport/ws/server"
 )
 
 var opts struct {
-	DBURL           string `long:"db_url" env:"DATABASE_URL" description:"DB URL" required:"true"`
-	CloudamqpUrl    string `long:"cloudamqp_url" env:"CLOUDAMQP_URL" description:"CLOUDAMQP URL" required:"true"`
-	CloudamqpApikey string `long:"cloudamqp_apikey" env:"CLOUDAMQP_APIKEY" description:"CLOUDAMQP APIKEY" required:"true"`
-	RESTPort        string `long:"rest_port" env:"PORT" description:"Server port" required:"true"`
-	WSPort          string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
-	GRPCPort        string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
-	LogLevel        string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
-	Topic           string `long:"topic" env:"TOPIC" description:"Topic" required:"true"`
+	DBURL        string `long:"db_url" env:"DATABASE_URL" description:"DB URL" required:"true"`
+	ProjectID    string `long:"projectID" env:"PROJECT_ID" required:"true" default:"trrp-virus"`
+	Topic        string `long:"topic" env:"TOPIC" required:"true" default:"cars"`
+	Subscription string `long:"sub" env:"SUBSCRIPTION" required:"true" default:"cars-sub"`
+	RESTPort     string `long:"rest_port" env:"PORT" description:"Server port" required:"true"`
+	WSPort       string `long:"ws_port" env:"WS_PORT" description:"Server port" required:"true"`
+	GRPCPort     string `long:"grpc_port" env:"GRPC_PORT" description:"Server port" required:"true"`
+	LogLevel     string `long:"log_level" env:"LOG_LEVEL" description:"Log level for zerolog" required:"false"`
 }
 
 func Start(done chan interface{}) {
@@ -59,13 +58,11 @@ func Start(done chan interface{}) {
 	}()
 
 	// Start servers
-	go proxy.StartServer()
-	log.Info().Msg("Started Proxy server")
 	go restserver.StartServer("", opts.RESTPort, done)
 	log.Info().Msg("Started REST server")
 	go wsserver.StartServer("", opts.WSPort, done)
 	log.Info().Msg("Started WS server")
-	go rabbitmqserver.StartServer(opts.CloudamqpUrl, opts.Topic, done)
+	go pubsubserver.StartServer(opts.ProjectID, opts.Topic, opts.Subscription, done)
 	log.Info().Msg("Started RabbitMQ server")
 	go grpcserver.StartServer("", opts.GRPCPort)
 	log.Info().Msg("Started GRPC server")

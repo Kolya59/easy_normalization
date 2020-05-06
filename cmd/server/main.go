@@ -18,8 +18,6 @@ func main() {
 	go server.Start(done)
 
 	// Wait interrupt signal
-	select {
-	case <-sigint:
-		close(done)
-	}
+	<-sigint
+	close(done)
 }
